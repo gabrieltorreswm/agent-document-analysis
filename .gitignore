@@ -5,6 +5,16 @@ __pycache__
 .venv
 *.egg-info
 
+# Ignore Python packages inside Lambda function directories
+src/functions/*/bin/
+src/functions/*/lib/
+src/functions/*/lib64/
+src/functions/*/__pycache__/
+src/functions/*/*.dist-info/
+src/functions/*/*.egg-info/
+src/functions/*/site-packages/
+lambda_layer/python/
+
 # CDK asset staging directory
 .cdk.staging
 cdk.out

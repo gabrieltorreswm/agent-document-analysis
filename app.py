@@ -7,7 +7,7 @@ from agent_document_analysis.agent_document_analysis_stack import AgentDocumentA
 
 
 app = cdk.App()
-AgentDocumentAnalysisStack(app, "AgentDocumentAnalysisStack",
+AgentDocumentAnalysisStack(app, "agent-document-analysis",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
