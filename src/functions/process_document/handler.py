@@ -177,12 +177,12 @@ def send_email(data_response_model):
 
          # Format top-cost applications
         top_apps_str = "\n".join(
-            [f"   - {app['name']}: {app['totalCost']}" for app in top_apps]
+            [f"   - {app['name']}: {app['cost']}    " for app in top_apps]
         )
 
         # Format daily cost trend
         daily_trend_str = "\n".join(
-            [f"   - {date}: {cost}" for date, cost in daily_trend.items()]
+            [f"   - {date}: {cost}     " for date, cost in daily_trend.items()]
         )
 
         # Format underutilized resources
@@ -202,32 +202,32 @@ def send_email(data_response_model):
 
         email_subject = "🚀 AWS FinOps Cost Report"
         email_body = f"""
-             Hola a todos, espero todo este yendo muy bien.
+        Hola a todos, espero todo este yendo muy bien.
 
-             Envio el último reporte de costos:
+        Envio el último reporte de costos:
 
-            📊 **Total Costos:** {total_cost}
+        📊 **Total Costos:** {total_cost}
 
-            **Costo Total Por Aplicación:**
-            {top_apps_str}
+        **Top costos por Aplicación:**
+        {top_apps_str}
 
-            📅 **Costos Diarios:**
-            {daily_trend_str}
+        📅 **Costos Diarios:**
+        {daily_trend_str}
 
-            ⚠️ **Recursos subutilizados:**
-            {underutilized_str if underutilized_resources else "No underutilized resources detected."}
+        ⚠️ **Recursos subutilizados:**
+        {underutilized_str if underutilized_resources else "No underutilized resources detected."}
 
-            ⚙️ **Recursos sobreaprovisionados::**
-            {over_provisioned_str if over_provisioned_resources else "No over-provisioned resources detected."}
+        ⚙️ **Recursos sobreaprovisionados::**
+        {over_provisioned_str if over_provisioned_resources else "No over-provisioned resources detected."}
 
-            🚨 **Anomalías de costos (picos inesperados)::**
-            {anomalies_str if cost_anomalies else "No anomalies detected."}
+        🚨 **Anomalías de costos (picos inesperados)::**
+        {anomalies_str if cost_anomalies else "No anomalies detected."}
 
-            💡 **Recomendaciones para ahorrar costos::**
-            {recommendations_str if recommendations else "No recommendations at this time."}
+        💡 **Recomendaciones para ahorrar costos::**
+        {recommendations_str if recommendations else "No recommendations at this time."}
 
-            Saludos,  
-            Servicios Cloud
+        Saludos,  
+        Servicios Cloud
         """
 
         # Publish message to SNS
