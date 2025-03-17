@@ -4,6 +4,7 @@ from aws_cdk import (
     Stack,
     aws_iam as iam,
     aws_s3 as s3,
+    aws_sns as sns,
     aws_lambda as _lambda,
     aws_s3_notifications as s3_notifications,
     aws_sqs as sqs,
@@ -41,6 +42,16 @@ class AgentDocumentAnalysisStack(Stack):
             resources=[f"arn:aws:s3:::bedrock-multimodal-s3/*"]
         ))
 
+        sns_topic = sns.Topic(self, "FinOpsTopic",
+            display_name="AWS FinOps Cost Alerts GT",
+            topic_name=f"{self.stack_name}-notify-email"
+        )
+
+        lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
+            actions=["sns:Publish"],
+            resources=[sns_topic.topic_arn]
+        ))
+
         # Define the S3 bucket
         bucket_documents = s3.Bucket(
             self, "documents",
@@ -50,6 +61,8 @@ class AgentDocumentAnalysisStack(Stack):
             auto_delete_objects=True  # Delete objects with the stack
         )
 
+
+
         # The code that defines your stack goes here
         process_document = _lambda.Function(
             self, "process_document",
@@ -57,11 +70,16 @@ class AgentDocumentAnalysisStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_8,
             handler="handler.process_document",
             environment={
-                "bucket_documents": bucket_documents.bucket_name
+                "BUCKET_ARN": bucket_documents.bucket_name,
+                "SNS_TOPIC_ARN": sns_topic.topic_arn,
+                "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0"
             },
             role=lambda_role_bedrock,
+            timeout=Duration.seconds(90),
             code=_lambda.Code.from_asset("src/functions/process_document")
         )
+
+        sns_topic.grant_publish(process_document)
 
         # Add S3 event notification (trigger) to invoke Lambda on object creation
         bucket_documents.add_event_notification(
