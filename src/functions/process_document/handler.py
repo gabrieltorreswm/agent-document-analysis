@@ -5,7 +5,7 @@ import base64
 # Initialize AWS clients
 s3 = boto3.client('s3')
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
-MODEL_ID = "anthropic.claude-3-7-sonnet-20250219-v1:0"
+MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
 def process_document(event, context):
 
@@ -25,7 +25,7 @@ def process_document(event, context):
             # get the prompt 
             prompt = generate_prompt()
 
-            response = invoke_claude_3_multimodal(prompt, base64_image)
+            response = invoke_claude_3_multimodal(prompt, image_data)
         
             # Parse the JSON response
             print(f"New file uploaded: {object_key} in bucket {bucket_name}, base54 {len(base64_image)}, response prompt {response}")
@@ -109,14 +109,15 @@ def invoke_claude_3_multimodal(prompt, base64_image_data):
                         "type": "text",
                         "text": prompt,
                     },
-                    {
-                        "type": "text",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "text/csv",
-                            "data": base64_image_data,
-                        },
-                    },
+                     {
+                    "document": {
+                            "name": "finops_costs.csv",
+                            "format": "csv",
+                            "source": {
+                                "bytes": base64_image_data
+                            }
+                        }
+                    }
                 ],
             }
         ],

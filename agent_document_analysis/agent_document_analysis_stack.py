@@ -26,7 +26,12 @@ class AgentDocumentAnalysisStack(Stack):
         
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
             actions=["bedrock:InvokeModel"],
-            resources=["arn:aws:bedrock:us-east-1::foundation-model/*"]
+            resources=["arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0"]
+        ))
+
+        lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
+            actions=["log:*","cloudwatch:*"],
+            resources=["*"]
         ))
 
         # Add inline policy to the Lambda role
@@ -54,6 +59,7 @@ class AgentDocumentAnalysisStack(Stack):
             environment={
                 "bucket_documents": bucket_documents.bucket_name
             },
+            role=lambda_role_bedrock,
             code=_lambda.Code.from_asset("src/functions/process_document")
         )
 
