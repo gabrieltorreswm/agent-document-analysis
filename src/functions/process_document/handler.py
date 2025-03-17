@@ -44,7 +44,7 @@ def process_document(event, context):
 
             print(f"model text {response['content'][0]['text']}")
 
-            sent_notification = send_email(response['content'][0]['text'])
+            sent_notification = send_email(json.loads(response['content'][0]['text']))
 
             print(f"EndProcesss {sent_notification}")
             return response
@@ -165,6 +165,7 @@ def invoke_claude_3_multimodal(prompt, csv_table):
 
 def send_email(data_response_model):
         # Custom email subject & message body
+        print(f'data_response_model : {data_response_model}')
 
         total_cost = data_response_model["costSummary"]["totalCost"]
         top_apps = data_response_model["costSummary"]["topCostApplications"]
@@ -200,7 +201,7 @@ def send_email(data_response_model):
 
 
         email_subject = "🚀 AWS FinOps Cost Report"
-        email_body = """
+        email_body = f"""
              Hola a todos, espero todo este yendo muy bien.
 
              Envio el último reporte de costos:
