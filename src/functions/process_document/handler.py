@@ -1,3 +1,4 @@
+import requests
 import json
 import boto3
 import base64
@@ -12,7 +13,7 @@ s3 = boto3.client('s3')
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
 MODEL_ID = os.environ['MODEL_ID']
 SNS_TOPIC_ARN = os.environ['SNS_TOPIC_ARN']
-BUCKET_ARN = os.environ['BUCKET_ARN']
+BUCKET_NAME = os.environ['BUCKET_NAME']
 
 def process_document(event, context):
 
@@ -22,6 +23,11 @@ def process_document(event, context):
             bucket_name = event['Records'][0]["s3"]["bucket"]["name"]
             object_key = event['Records'][0]["s3"]["object"]["key"]
 
+            response = requests.get("https://jsonplaceholder.typicode.com/todos/1")
+            data = response.json()
+
+            print(f" data {data}")
+
             if not object_key.lower().endswith('.csv'):
                 print(f"file not valid")
                 return { 'statusCode': 403 , 'message': "file format is not valid"}
@@ -29,7 +35,10 @@ def process_document(event, context):
             url_bucket = f's3://{bucket_name}/{object_key}'
             image_data = s3.get_object(Bucket=bucket_name, Key= object_key)['Body'].read()
             base64_image = base64.b64encode(image_data).decode('utf-8')
+            # generate image charts
+            #image = generate_chart()
 
+            return
             # get the prompt 
             prompt = generate_prompt()
             csv_content = convert_csv(image_data.decode('utf-8'))
@@ -70,23 +79,21 @@ def generate_prompt():
 
 
         1️⃣ Desglose y tendencias de costos
-        • Tendencias de costos diarios y totales para diferentes aplicaciones (solo 10 registros).
-        • Identifique las principales aplicaciones que contribuyen al costo total.
+        • Tendencias de costos mensuales o diarios (dependiendo la table vcsv) y totales para diferentes aplicaciones (solo 10 registros).
+        • Identifique toda las aplicaciones que contribuyen al costo total.
         • Resalte cualquier aumento inesperado o anomalía en los costos.
 
         2️⃣ Oportunidades de optimización de costos
-        • Detecte recursos infrautilizados o inactivos que puedan reducirse o cancelarse.
-        • Identifique ineficiencias de costos, como instancias con exceso de aprovisionamiento.
-        • Proporcione recomendaciones para el dimensionamiento adecuado.
+        • Detecte recursos y costos mas bajos, destacando que es la apliacion que es mas costo eficiente.
+        • Proporcione recomendaciones basado en las buenas practicas para el servicio aws cognito.
 
         3️⃣ Fugas e ineficiencias de costos
-        • Resalte cualquier aumento repentino en el gasto.
-        • Identifique áreas donde los costos se acumulan, pero la entrega de valor no es clara.
-        • Detecte patrones de gasto anómalos que puedan requerir investigación.
+        • Resalte cualquier aumento repentino y mejora en comparacion con los dias o meses anterios.
+        • Detecte patrones de gasto anómalos que puedan requerir investigación. Por ejemplo realizar procesos de caches o reutilizacion de tokes de cognito.
 
         4️⃣ Recomendaciones para los equipos de FinOps
-        • Sugerencias para la asignación de presupuesto por aplicación. • Pronóstico de información para una mejor planificación de costos.
-        • Ahorros potenciales gracias a instancias reservadas, instancias puntuales o escalado automático.
+        • Sugerencias para la asignación de presupuesto por aplicación. 
+        • Pronóstico de información para una mejor planificación de costos.
 
         Instrucciones:
         • Extraiga la información relevante con la mayor precisión posible.
@@ -94,14 +101,18 @@ def generate_prompt():
         • Presente las tendencias de costos en un formato fácil de entender (gráficos, tablas y resúmenes).
         • Asegúrese de que todos los valores de costos estén en formato monetario e incluyan cálculos totales.
 
-        Nota: la respuestas deben de ser en español 
+        Nota: la respuestas deben de ser en español.
 
         Devuelva los datos extraídos en el siguiente formato JSON:
         {
             "costSummary": {
                 "totalCost": "",
-                "dailyCostTrend": {},
-                "topCostApplications": []
+                "CostTrend": [
+                    {"month":"","cost":"" }
+                ],
+                "costByApplicationsByDesc": [
+                        {"application":"","cost":"" }
+                ]
             },
             "optimizationOpportunities": {
                 "underutilizedResources": [],
@@ -164,77 +175,106 @@ def invoke_claude_3_multimodal(prompt, csv_table):
 
 
 def send_email(data_response_model):
-        # Custom email subject & message body
-        print(f'data_response_model : {data_response_model}')
+        try:
+             # Custom email subject & message body
+            print(f'data_response_model : {data_response_model}')
 
-        total_cost = data_response_model["costSummary"]["totalCost"]
-        top_apps = data_response_model["costSummary"]["topCostApplications"]
-        daily_trend = data_response_model["costSummary"]["dailyCostTrend"]
-        underutilized_resources = data_response_model["optimizationOpportunities"]["underutilizedResources"]
-        over_provisioned_resources = data_response_model["optimizationOpportunities"]["overProvisionedResources"]
-        cost_anomalies = data_response_model["costAnomalies"]["unexpectedSpikes"]
-        recommendations = data_response_model["recommendations"]["costSavingStrategies"]
+            total_cost = data_response_model["costSummary"]["totalCost"]
+            top_apps = data_response_model["costSummary"]["costByApplicationsByDesc"]
+            trend = data_response_model["costSummary"]["CostTrend"]
+            underutilized_resources = data_response_model["optimizationOpportunities"]["underutilizedResources"]
+            over_provisioned_resources = data_response_model["optimizationOpportunities"]["overProvisionedResources"]
+            cost_anomalies = data_response_model["costAnomalies"]["unexpectedSpikes"]
+            recommendations = data_response_model["recommendations"]["costSavingStrategies"]
 
-         # Format top-cost applications
-        top_apps_str = "\n".join(
-            [f"   - {app['name']}: {app['cost']}    " for app in top_apps]
-        )
+            # Format top-cost applications
+            top_apps_str = "\n".join(
+                [f"- {app['application']}: {app['cost']}" for app in top_apps]
+            )
 
-        # Format daily cost trend
-        daily_trend_str = "\n".join(
-            [f"   - {date}: {cost}     " for date, cost in daily_trend.items()]
-        )
+            # Format daily cost trend
+            trend_str = "\n".join(
+                [f"* {app['month']}: {app['cost']}" for app in trend]
+            )
 
-        # Format underutilized resources
-        underutilized_str = "\n".join([f"   - {item}" for item in underutilized_resources])
+            # Format underutilized resources
+            underutilized_str = "\n".join([f"   - {item}" for item in underutilized_resources])
 
-        # Format over-provisioned resources
-        over_provisioned_str = "\n".join([f"   - {item}" for item in over_provisioned_resources])
+            # Format over-provisioned resources
+            over_provisioned_str = "\n".join([f"   - {item}" for item in over_provisioned_resources])
 
-        # Format cost anomalies
-        anomalies_str = "\n".join(
-            [f"   - {anomaly['date']} | {anomaly['application']}: {anomaly['cost']}" for anomaly in cost_anomalies]
-        )
+            # Format cost anomalies
+            anomalies_str = "\n".join(
+                [f"* {anomaly}" for anomaly in cost_anomalies]
+            )
 
-        # Format recommendations
-        recommendations_str = "\n".join([f"   - {rec}" for rec in recommendations])
+            # Format recommendations
+            recommendations_str = "\n".join([f"   - {rec}" for rec in recommendations])
 
 
-        email_subject = "🚀 AWS FinOps Cost Report"
-        email_body = f"""
-        Hola a todos, espero todo este yendo muy bien.
+            email_subject = "🚀 AWS FinOps Cost Report"
+            email_body = f"""
+            Hola a todos, espero todo este yendo muy bien.
 
-        Envio el último reporte de costos:
+            Envio el último reporte de costos:
 
-        📊 **Total Costos:** {total_cost}
+            📊 **Total Costos:** {total_cost}
 
-        **Top costos por Aplicación:**
-        {top_apps_str}
+            **Costos por Aplicación:**
+                {top_apps_str}
 
-        📅 **Costos Diarios:**
-        {daily_trend_str}
+            📅 **Costos Mensuales:**
+                {trend_str}
 
-        ⚠️ **Recursos subutilizados:**
-        {underutilized_str if underutilized_resources else "No underutilized resources detected."}
+            ⚠️ **Recursos subutilizados:**
+                {underutilized_str if underutilized_resources else "No underutilized resources detected."}
 
-        ⚙️ **Recursos sobreaprovisionados::**
-        {over_provisioned_str if over_provisioned_resources else "No over-provisioned resources detected."}
+            ⚙️ **Recursos sobreaprovisionados::**
+                {over_provisioned_str if over_provisioned_resources else "No over-provisioned resources detected."}
 
-        🚨 **Anomalías de costos (picos inesperados)::**
-        {anomalies_str if cost_anomalies else "No anomalies detected."}
+            🚨 **Anomalías de costos (picos inesperados)::**
+                {anomalies_str if cost_anomalies else "No anomalies detected."}
 
-        💡 **Recomendaciones para ahorrar costos::**
-        {recommendations_str if recommendations else "No recommendations at this time."}
+            💡 **Recomendaciones para ahorrar costos::**
+                {recommendations_str if recommendations else "No recommendations at this time."}
 
-        Saludos,  
-        Servicios Cloud
-        """
+            Saludos,  
+            Servicios Cloud
+            """
 
-        # Publish message to SNS
-        response = sns_client.publish(
-            TopicArn=SNS_TOPIC_ARN,
-            Message=email_body,  # Email body
-            Subject=email_subject  # Email subject
-        )
+            # Publish message to SNS
+            response = sns_client.publish(
+                TopicArn=SNS_TOPIC_ARN,
+                Message=email_body,  # Email body
+                Subject=email_subject  # Email subject
+            )
 
-        return response
+            return response
+
+        except Exception as ex: 
+            print(f"error {ex}")
+            return "Ok"
+
+
+
+# def generate_chart():
+#       # Generate Chart
+#     applications = ["credimax", "onb/tarjeta", "cuenta/cliente", "venta-cruzada", "cliente", "cuenta/nomina"]
+#     costs = [106.95, 54.03, 33.38, 6.00, 6.00, 6.39]
+
+#     plt.figure(figsize=(8, 5))
+#     plt.barh(applications, costs, color="blue", alpha=0.7)
+#     plt.xlabel("Cost (USD)")
+#     plt.title("Cloud Cost Breakdown")
+#     plt.gca().invert_yaxis()
+
+#     # Save to S3
+#     s3 = boto3.client("s3")
+#     img_data = io.BytesIO()
+#     plt.savefig(img_data, format="png", dpi=300)
+#     img_data.seek(0)
+
+#     file_key = "cost-chart.png"
+#     s3.put_object(Bucket=BUCKET_NAME, Key=file_key, Body=img_data, ContentType="image/png")
+
+#     return {"statusCode": 200, "body": f"Chart uploaded to S3://{BUCKET_NAME}/images/{file_key}"}

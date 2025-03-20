@@ -16,6 +16,13 @@ class AgentDocumentAnalysisStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         #Role 
+
+        # matplotlib_layer = _lambda.LayerVersion(
+        #     self, "MatplotlibLayer",
+        #     code=_lambda.Code.from_asset("lambda_layers/matplotlib_layer"),  # Path to the layer
+        #     compatible_runtimes=[_lambda.Runtime.PYTHON_3_9],  # Ensure it matches Python 3.9
+        #     description="Lambda layer with Matplotlib 3.3.4 and NumPy"
+        # )
          # Create IAM role for Lambda functions
         lambda_role_bedrock = iam.Role(
             self, f'{self.stack_name}-lambda-role',
@@ -40,6 +47,12 @@ class AgentDocumentAnalysisStack(Stack):
             effect=iam.Effect.ALLOW,
             actions=["s3:GetObject"],
             resources=[f"arn:aws:s3:::bedrock-multimodal-s3/*"]
+        ))
+
+        lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
+            effect=iam.Effect.ALLOW,
+            actions=["lambda:GetLayerVersion"],
+            resources=[f"arn:aws:lambda:us-east-1:471112847654:layer:numpy_layer:*"]
         ))
 
         sns_topic = sns.Topic(self, "FinOpsTopic",
@@ -67,15 +80,17 @@ class AgentDocumentAnalysisStack(Stack):
         process_document = _lambda.Function(
             self, "process_document",
             function_name= f'{self.stack_name}-process-document',
-            runtime=_lambda.Runtime.PYTHON_3_8,
+            runtime=_lambda.Runtime.PYTHON_3_9,
             handler="handler.process_document",
             environment={
-                "BUCKET_ARN": bucket_documents.bucket_name,
+                "BUCKET_NAME": bucket_documents.bucket_name,
                 "SNS_TOPIC_ARN": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0"
             },
+            memory_size=1024,
             role=lambda_role_bedrock,
             timeout=Duration.seconds(90),
+            #layers=[matplotlib_layer],
             code=_lambda.Code.from_asset("src/functions/process_document")
         )
 
