@@ -52,10 +52,10 @@ def process_document(event, context):
             response_model = json.loads(response['content'][0]['text']) 
             sent_notification = send_email(response_model)
             put_transaction_id = put_new_transaccion(transactionId, response_model)
-            sent_topic_notification = sendMessageTopic({transactionId})
+            sent_topic_notification = sendMessageTopic({"transactionId":transactionId})
 
             # Parse the JSON response
-            print(f"Message Send: {sent_notification} in bucket {sent_topic_notification}, transactionId {transactionId}")
+            print(f"Message Send: {sent_notification} in bucket sent_topic_notification, transactionId {transactionId}")
 
             return response
 
@@ -144,15 +144,19 @@ def convert_csv(csv_file):
 
 def sendMessageTopic(payload):
     # Publish to SNS topic
-    response = sns_client.publish(
-        TopicArn=SNS_TOPIC_ARN,
-        Message=json.dumps(payload),
-        Subject="Generate a chart"  # optional
-    )
+    print(f"payload {payload}")
+    try:
+        response = sns_client.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Message=json.dumps(payload),
+            Subject="Generate a chart"  # optional
+        )
 
-    print(f"Message sent! ID: {response}")
+        print(f"Message sent! ID: {response}")
 
-    return response['MessageId']
+        return response
+    except Exception as ex:
+        print(f"Exception ${ex}")
 
 def invoke_claude_3_multimodal(prompt, csv_table):
     request_body = {
@@ -273,12 +277,12 @@ def put_new_transaccion(transactionId, response_model):
     item = {
         "transactionId": transactionId ,
         "createdAt":datetime.utcnow().isoformat(),
-        "response_model":json.dumps(response_model)
+        "response_model": json.dumps(response_model)
     }
      
     try:
         table_transaction = dynamodb.Table(TABLE_TRANSACCION)
-        response = table_transaction.put_item(Item=json.dumps(item))
+        response = table_transaction.put_item(Item=item)
 
         print(f"table transaccion respponse: ${response}")
         return response
