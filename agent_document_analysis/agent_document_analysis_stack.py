@@ -92,7 +92,7 @@ class AgentDocumentAnalysisStack(Stack):
 
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
             actions=["sns:Publish"],
-            resources=[sns_topic.topic_arn]
+            resources=[sns_topic.topic_arn, topic.topic_arn]
         ))
 
         # Define the S3 bucket
@@ -114,9 +114,9 @@ class AgentDocumentAnalysisStack(Stack):
             handler="handler.process_document",
             environment={
                 "BUCKET_NAME": bucket_documents.bucket_name,
-                "SNS_TOPIC_ARN": sns_topic.topic_arn,
+                "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
-                "SNS_TOPIC_NAME":topic.topic_name,
+                "SNS_TOPIC_CHART_CREATOR":topic.topic_arn,
                 "TABLE_TRANSACCION": table.table_name
             },
             memory_size=1024,

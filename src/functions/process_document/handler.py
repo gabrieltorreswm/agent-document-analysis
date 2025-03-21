@@ -14,9 +14,9 @@ dynamodb = boto3.resource('dynamodb')
 s3 = boto3.client('s3')
 bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
 MODEL_ID = os.environ['MODEL_ID']
-SNS_TOPIC_ARN = os.environ['SNS_TOPIC_ARN']
+SNS_TOPIC_EMAIL = os.environ['SNS_TOPIC_EMAIL']
 BUCKET_NAME = os.environ['BUCKET_NAME']
-SNS_TOPIC_NAME = os.environ['SNS_TOPIC_NAME']
+SNS_TOPIC_CHART_CREATOR = os.environ['SNS_TOPIC_CHART_CREATOR']
 TABLE_TRANSACCION = os.environ['TABLE_TRANSACCION']
 
 def process_document(event, context):
@@ -144,10 +144,10 @@ def convert_csv(csv_file):
 
 def sendMessageTopic(payload):
     # Publish to SNS topic
-    print(f"payload {payload}")
+    print(f"payload {payload} and ar {SNS_TOPIC_CHART_CREATOR}")
     try:
         response = sns_client.publish(
-            TopicArn=SNS_TOPIC_ARN,
+            TopicArn=SNS_TOPIC_CHART_CREATOR,
             Message=json.dumps({ "transactionId": payload }),
             Subject="Generate a chart"  # optional
         )
@@ -261,7 +261,7 @@ def send_email(data_response_model):
 
             # Publish message to SNS
             response = sns_client.publish(
-                TopicArn=SNS_TOPIC_ARN,
+                TopicArn=SNS_TOPIC_EMAIL,
                 Message=email_body,  # Email body
                 Subject=email_subject  # Email subject
             )
