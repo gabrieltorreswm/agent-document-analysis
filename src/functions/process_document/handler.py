@@ -14,6 +14,7 @@ bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
 MODEL_ID = os.environ['MODEL_ID']
 SNS_TOPIC_ARN = os.environ['SNS_TOPIC_ARN']
 BUCKET_NAME = os.environ['BUCKET_NAME']
+SNS_TOPIC = os.environ['SNS_TOPIC']
 
 def process_document(event, context):
 
