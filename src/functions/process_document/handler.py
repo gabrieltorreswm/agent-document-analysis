@@ -16,7 +16,7 @@ bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
 MODEL_ID = os.environ['MODEL_ID']
 SNS_TOPIC_ARN = os.environ['SNS_TOPIC_ARN']
 BUCKET_NAME = os.environ['BUCKET_NAME']
-SNS_TOPIC = os.environ['SNS_TOPIC']
+SNS_TOPIC_NAME = os.environ['SNS_TOPIC_NAME']
 TABLE_TRANSACCION = os.environ['TABLE_TRANSACCION']
 
 def process_document(event, context):
@@ -52,7 +52,7 @@ def process_document(event, context):
             response_model = json.loads(response['content'][0]['text']) 
             sent_notification = send_email(response_model)
             put_transaction_id = put_new_transaccion(transactionId, response_model)
-            sent_topic_notification = sendMessageTopic({"transactionId":transactionId})
+            sent_topic_notification = sendMessageTopic(transactionId)
 
             # Parse the JSON response
             print(f"Message Send: {sent_notification} in bucket sent_topic_notification, transactionId {transactionId}")
@@ -148,7 +148,7 @@ def sendMessageTopic(payload):
     try:
         response = sns_client.publish(
             TopicArn=SNS_TOPIC_ARN,
-            Message=json.dumps(payload),
+            Message=json.dumps({ "transactionId": payload }),
             Subject="Generate a chart"  # optional
         )
 

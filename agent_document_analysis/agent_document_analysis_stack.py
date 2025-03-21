@@ -116,7 +116,7 @@ class AgentDocumentAnalysisStack(Stack):
                 "BUCKET_NAME": bucket_documents.bucket_name,
                 "SNS_TOPIC_ARN": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
-                "SNS_TOPIC":topic.topic_arn,
+                "SNS_TOPIC_NAME":topic.topic_name,
                 "TABLE_TRANSACCION": table.table_name
             },
             memory_size=1024,
