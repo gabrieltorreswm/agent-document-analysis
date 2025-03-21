@@ -8,6 +8,7 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_s3_notifications as s3_notifications,
     aws_events as events,
+    aws_dynamodb as dynamodb,
     aws_events_targets as targets
 )
 from constructs import Construct
@@ -19,7 +20,8 @@ class AgentDocumentAnalysisStack(Stack):
         
         #crate topic
         topic = sns.Topic(self, "chart-creator", topic_name=f"{self.stack_name}-chart-creator")
-
+        
+        #rule eventBridge
         rule = events.Rule(self, "SnsToEcsRule",
             rule_name=f"{self.stack_name}-chart-creator",
             event_pattern={
@@ -29,10 +31,27 @@ class AgentDocumentAnalysisStack(Stack):
             }
         )
 
+        # it's manualy from the aws console
         # rule.add_target(targets.EcsTask(
         #     cluster="agent-document-finops",
         #     task_definition="agent-chart"
-        # ))
+        # )}
+
+        table = dynamodb.Table(
+            self, f"{self.stack_name}-transaction",
+            table_name=f"{self.stack_name}-transaction",  # Optional: custom name
+            partition_key=dynamodb.Attribute(
+                name="transactionId",
+                type=dynamodb.AttributeType.STRING
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST  # On-demand pricing
+        )
+
+        # Optional: add a sort key
+        sort_key=dynamodb.Attribute(
+            name="createdAt",
+            type=dynamodb.AttributeType.STRING
+        ),
 
         # Create IAM role for Lambda functions
         lambda_role_bedrock = iam.Role(
@@ -97,7 +116,8 @@ class AgentDocumentAnalysisStack(Stack):
                 "BUCKET_NAME": bucket_documents.bucket_name,
                 "SNS_TOPIC_ARN": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
-                "SNS_TOPIC":topic.topic_arn
+                "SNS_TOPIC":topic.topic_arn,
+                "TABLE_TRANSACCION": table.table_name
             },
             memory_size=1024,
             role=lambda_role_bedrock,
@@ -107,6 +127,7 @@ class AgentDocumentAnalysisStack(Stack):
         )
 
         sns_topic.grant_publish(process_document)
+        table.grant_write_data(process_document)
 
         # Add S3 event notification (trigger) to invoke Lambda on object creation
         bucket_documents.add_event_notification(

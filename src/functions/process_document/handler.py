@@ -1,12 +1,14 @@
 import requests
 import json
 import boto3
-import base64
 import io
 import csv
 import os
+import uuid
+from datetime import datetime
 
 sns_client = boto3.client('sns')
+dynamodb = boto3.resource('dynamodb')
 
 # Initialize AWS clients
 s3 = boto3.client('s3')
@@ -15,6 +17,7 @@ MODEL_ID = os.environ['MODEL_ID']
 SNS_TOPIC_ARN = os.environ['SNS_TOPIC_ARN']
 BUCKET_NAME = os.environ['BUCKET_NAME']
 SNS_TOPIC = os.environ['SNS_TOPIC']
+TABLE_TRANSACCION = os.environ['TABLE_TRANSACCION']
 
 def process_document(event, context):
 
@@ -23,6 +26,8 @@ def process_document(event, context):
     try:
             bucket_name = event['Records'][0]["s3"]["bucket"]["name"]
             object_key = event['Records'][0]["s3"]["object"]["key"]
+
+            transactionId = str(uuid.uuid4())
 
             response = requests.get("https://jsonplaceholder.typicode.com/todos/1")
             data = response.json()
@@ -33,30 +38,25 @@ def process_document(event, context):
                 print(f"file not valid")
                 return { 'statusCode': 403 , 'message': "file format is not valid"}
             
-            url_bucket = f's3://{bucket_name}/{object_key}'
             image_data = s3.get_object(Bucket=bucket_name, Key= object_key)['Body'].read()
-            base64_image = base64.b64encode(image_data).decode('utf-8')
-            # generate image charts
-            #image = generate_chart()
-
-            return
+        
             # get the prompt 
             prompt = generate_prompt()
             csv_content = convert_csv(image_data.decode('utf-8'))
 
             response = invoke_claude_3_multimodal(prompt, csv_content)
 
-            # Parse the JSON response
-            print(f"New file uploaded: {object_key} in bucket {bucket_name}, csv_content {csv_content}")
-
             print(f'response model raw: {response}')
             print(f"reponse text {json.loads(response['content'][0]['text'])}")
 
-            print(f"model text {response['content'][0]['text']}")
+            response_model = json.loads(response['content'][0]['text']) 
+            sent_notification = send_email(response_model)
+            put_transaction_id = put_new_transaccion(transactionId, esponse_model)
+            sent_topic_notification = sendMessageTopic({transactionId})
 
-            sent_notification = send_email(json.loads(response['content'][0]['text']))
+            # Parse the JSON response
+            print(f"Message Send: {sent_notification} in bucket {sent_topic_notification}, transactionId {transactionId}")
 
-            print(f"EndProcesss {sent_notification}")
             return response
 
     except Exception as ex: 
@@ -141,6 +141,18 @@ def convert_csv(csv_file):
 
     print(f' return convert csv : {csv_content}')
     return csv_content
+
+def sendMessageTopic(payload):
+    # Publish to SNS topic
+    response = sns_client.publish(
+        TopicArn=SNS_TOPIC_ARN,
+        Message=json.dumps(payload),
+        Subject="Generate a chart"  # optional
+    )
+
+    print(f"Message sent! ID: {response}")
+
+    return response['MessageId']
 
 def invoke_claude_3_multimodal(prompt, csv_table):
     request_body = {
@@ -256,6 +268,24 @@ def send_email(data_response_model):
             print(f"error {ex}")
             return "Ok"
 
+def put_new_transaccion(transactionId, response_model):
+
+    item = {
+        "transactionId": transactionId ,
+        "createdAt":datetime.utcnow().isoformat(),
+        "response_model":response_model
+    }
+     
+    try:
+        table_transaction = dynamodb.Table(TABLE_TRANSACCION)
+        response = table_transaction.put_item(Item=json.dumps(item))
+
+        print(f"table transaccion respponse: ${response}")
+        return response
+        
+    except Exception as ex:
+        print(f"ex ${ex}")
+        
 
 
 # def generate_chart():
