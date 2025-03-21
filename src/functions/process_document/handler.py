@@ -51,7 +51,7 @@ def process_document(event, context):
 
             response_model = json.loads(response['content'][0]['text']) 
             sent_notification = send_email(response_model)
-            put_transaction_id = put_new_transaccion(transactionId, esponse_model)
+            put_transaction_id = put_new_transaccion(transactionId, response_model)
             sent_topic_notification = sendMessageTopic({transactionId})
 
             # Parse the JSON response
@@ -273,7 +273,7 @@ def put_new_transaccion(transactionId, response_model):
     item = {
         "transactionId": transactionId ,
         "createdAt":datetime.utcnow().isoformat(),
-        "response_model":response_model
+        "response_model":json.dumps(response_model)
     }
      
     try:
