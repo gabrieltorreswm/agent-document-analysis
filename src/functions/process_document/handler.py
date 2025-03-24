@@ -52,7 +52,7 @@ def process_document(event, context):
             response_model = json.loads(response['content'][0]['text']) 
             sent_notification = send_email(response_model)
             put_transaction_id = put_new_transaccion(transactionId, response_model)
-            sent_topic_notification = sendMessageTopic(transactionId)
+            #sent_topic_notification = sendMessageTopic(transactionId)
 
             # Parse the JSON response
             print(f"Message Send: {sent_notification} in bucket sent_topic_notification, transactionId {transactionId}")
@@ -273,7 +273,7 @@ def send_email(data_response_model):
             return "Ok"
 
 def put_new_transaccion(transactionId, response_model):
-
+    print(f"model response {response_model}")
     item = {
         "transactionId": transactionId ,
         "createdAt":datetime.utcnow().isoformat(),

@@ -104,6 +104,14 @@ class AgentDocumentAnalysisStack(Stack):
             auto_delete_objects=True  # Delete objects with the stack
         )
 
+        bucket_result_analysis = s3.Bucket(
+            self, "result-analysis",
+            bucket_name= f"{self.stack_name}-result-analysis",
+            versioned=True,  # Enables versioning
+            removal_policy= RemovalPolicy.DESTROY,  # Delete on stack deletion
+            auto_delete_objects=True  # Delete objects with the stack
+        )
+
 
 
         # The code that defines your stack goes here
