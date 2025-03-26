@@ -111,10 +111,10 @@ class AgentDocumentAnalysisStack(Stack):
                         "s3:GetBucket*",
                         "s3:List*",
                         "s3:PutObject",
-                        #"s3:PutObjectAcl"
+                        "s3:PutObjectAcl"
                 ],
                 resources=[f"{bucket_documents.bucket_arn}/*"],
-                principals=[iam.AnyPrincipal()]
+                principals=[iam.ServicePrincipal("lambda.amazonaws.com")]
             )
         )
 
@@ -148,6 +148,23 @@ class AgentDocumentAnalysisStack(Stack):
             code=_lambda.Code.from_asset("src/functions/process_document")
         )
 
+        notification_summary = _lambda.Function(
+            self, "notification_summary",
+            function_name= f'{self.stack_name}-notify-summary',
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="handler.notify_summary",
+            environment={
+                "BUCKET_NAME": bucket_documents.bucket_name,
+                "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
+                "SNS_TOPIC_CHART_CREATOR":topic.topic_arn,
+                "TABLE_TRANSACCION": table.table_name
+            },
+            memory_size=1024,
+            role=lambda_role_bedrock,
+            timeout=Duration.seconds(90),
+            code=_lambda.Code.from_asset("src/functions/notify_summary")
+        )
+
         sns_topic.grant_publish(process_document)
         table.grant_write_data(process_document)
 
@@ -158,4 +175,4 @@ class AgentDocumentAnalysisStack(Stack):
         )
 
         # Grant S3 bucket read permissions to Lambda
-        #bucket_documents.grant_read(process_document)
+        bucket_documents.grant_read(process_document)
