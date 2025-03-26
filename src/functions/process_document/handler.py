@@ -52,7 +52,7 @@ def process_document(event, context):
             response_model = json.loads(response['content'][0]['text']) 
             sent_notification = send_email(response_model)
             put_transaction_id = put_new_transaccion(transactionId, response_model)
-            #sent_topic_notification = sendMessageTopic(transactionId)
+            sent_topic_notification = sendMessageTopic(transactionId)
 
             # Parse the JSON response
             print(f"Message Send: {sent_notification} in bucket sent_topic_notification, transactionId {transactionId}")
@@ -80,7 +80,8 @@ def generate_prompt():
 
 
         1️⃣ Desglose y tendencias de costos
-        • Tendencias de costos mensuales o diarios (dependiendo la table vcsv) y totales para diferentes aplicaciones (solo 10 registros).
+        • Tendencias de costos mensuales o diarios (dependiendo la table vcsv) para diferentes aplicaciones (maximo 10 registros).
+        • Costos por toda las aplicaciones mensualmente, basate en el csv cargado previamente. (costByAppsPerMonths)
         • Identifique toda las aplicaciones que contribuyen al costo total.
         • Resalte cualquier aumento inesperado o anomalía en los costos.
 
@@ -104,7 +105,7 @@ def generate_prompt():
 
         Nota: la respuestas deben de ser en español.
 
-        Devuelva los datos extraídos en el siguiente formato JSON:
+        Devuelva los datos extraídos en el siguiente formato JSON unicamente, sin comentarios adicionales:
         {
             "costSummary": {
                 "totalCost": "",
@@ -113,6 +114,9 @@ def generate_prompt():
                 ],
                 "costByApplicationsByDesc": [
                         {"application":"","cost":"" }
+                ],
+                 "costByAppsPerMonths": [
+                        {"application": "", "month": "", "cost": ""}
                 ]
             },
             "optimizationOpportunities": {

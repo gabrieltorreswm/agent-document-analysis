@@ -59,7 +59,7 @@ class AgentDocumentAnalysisStack(Stack):
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com")
         )
 
-          # Add necessary permissions to the Lambda role
+        # Add necessary permissions to the Lambda role
         lambda_role_bedrock.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole"))
         
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
@@ -104,6 +104,20 @@ class AgentDocumentAnalysisStack(Stack):
             auto_delete_objects=True  # Delete objects with the stack
         )
 
+        bucket_documents.add_to_resource_policy(
+             iam.PolicyStatement(
+                actions=[
+                      "s3:DeleteObject*",
+                        "s3:GetBucket*",
+                        "s3:List*",
+                        "s3:PutObject",
+                        #"s3:PutObjectAcl"
+                ],
+                resources=[f"{bucket_documents.bucket_arn}/*"],
+                principals=[iam.AnyPrincipal()]
+            )
+        )
+
         bucket_result_analysis = s3.Bucket(
             self, "result-analysis",
             bucket_name= f"{self.stack_name}-result-analysis",
@@ -144,4 +158,4 @@ class AgentDocumentAnalysisStack(Stack):
         )
 
         # Grant S3 bucket read permissions to Lambda
-        bucket_documents.grant_read(process_document)
+        #bucket_documents.grant_read(process_document)
