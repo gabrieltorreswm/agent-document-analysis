@@ -20,7 +20,6 @@ class AgentDocumentAnalysisStack(Stack):
         
         #crate topic
         topic_chart_creator = sns.Topic(self, "chart-creator", topic_name=f"{self.stack_name}-chart-creator")
-        topic_notify_summary = sns.Topic(self, "notify_summary", topic_name=f"{self.stack_name}-notify-summary")
         
         #rule eventBridge
         rule_creator = events.Rule(self, "SnsToEcsRule",
@@ -35,9 +34,8 @@ class AgentDocumentAnalysisStack(Stack):
         rule_message = events.Rule(self, "sns-rule-notification",
             rule_name=f"{self.stack_name}-notify-summary",
             event_pattern={
-                "source": ["aws.sns"],
-                "detail_type": ["SNS Message"],
-                "resources": [topic_notify_summary.topic_arn]
+                "source": ["agent.document.analysis"],
+                "detail_type": ["summary_notify"]
             }
         )
 
@@ -114,19 +112,19 @@ class AgentDocumentAnalysisStack(Stack):
             auto_delete_objects=True  # Delete objects with the stack
         )
 
-        bucket_documents.add_to_resource_policy(
-             iam.PolicyStatement(
-                actions=[
-                    "s3:DeleteObject*",
-                    "s3:GetBucket*",
-                    "s3:List*",
-                    "s3:PutObject",
-                    "s3:PutObjectAcl"
-                ],
-                resources=[f"{bucket_documents.bucket_arn}/*"],
-                principals=[iam.ServicePrincipal("lambda.amazonaws.com")]
-            )
-        )
+        # bucket_documents.add_to_resource_policy(
+        #      iam.PolicyStatement(
+        #         actions=[
+        #             "s3:DeleteObject*",
+        #             "s3:GetBucket*",
+        #             "s3:List*",
+        #             "s3:PutObject",
+        #             "s3:PutObjectAcl"
+        #         ],
+        #         resources=[f"{bucket_documents.bucket_arn}/*"],
+        #         principals=[iam.ServicePrincipal("lambda.amazonaws.com")]
+        #     )
+        # )
 
         bucket_result_analysis = s3.Bucket(
             self, "result-analysis",
@@ -164,7 +162,7 @@ class AgentDocumentAnalysisStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="handler.notify_summary",
             environment={
-                "BUCKET_NAME": bucket_documents.bucket_name,
+                "BUCKET_NAME": bucket_result_analysis.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
                 "TABLE_TRANSACCION": table.table_name
@@ -175,6 +173,7 @@ class AgentDocumentAnalysisStack(Stack):
             code=_lambda.Code.from_asset("src/functions/notify_summary")
         )
 
+        rule_message.add_target(targets.LambdaFunction(notification_summary))
         sns_topic.grant_publish(process_document)
         table.grant_write_data(process_document)
 
