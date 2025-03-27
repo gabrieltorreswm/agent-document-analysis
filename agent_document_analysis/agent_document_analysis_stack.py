@@ -19,15 +19,25 @@ class AgentDocumentAnalysisStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
         
         #crate topic
-        topic = sns.Topic(self, "chart-creator", topic_name=f"{self.stack_name}-chart-creator")
+        topic_chart_creator = sns.Topic(self, "chart-creator", topic_name=f"{self.stack_name}-chart-creator")
+        topic_notify_summary = sns.Topic(self, "notify_summary", topic_name=f"{self.stack_name}-notify-summary")
         
         #rule eventBridge
-        rule = events.Rule(self, "SnsToEcsRule",
+        rule_creator = events.Rule(self, "SnsToEcsRule",
             rule_name=f"{self.stack_name}-chart-creator",
             event_pattern={
                 "source": ["aws.sns"],
                 "detail_type": ["SNS Message"],
-                "resources": [topic.topic_arn]
+                "resources": [topic_chart_creator.topic_arn]
+            }
+        )
+
+        rule_message = events.Rule(self, "sns-rule-notification",
+            rule_name=f"{self.stack_name}-notify-summary",
+            event_pattern={
+                "source": ["aws.sns"],
+                "detail_type": ["SNS Message"],
+                "resources": [topic_notify_summary.topic_arn]
             }
         )
 
@@ -92,7 +102,7 @@ class AgentDocumentAnalysisStack(Stack):
 
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
             actions=["sns:Publish"],
-            resources=[sns_topic.topic_arn, topic.topic_arn]
+            resources=[sns_topic.topic_arn, topic_chart_creator.topic_arn]
         ))
 
         # Define the S3 bucket
@@ -107,11 +117,11 @@ class AgentDocumentAnalysisStack(Stack):
         bucket_documents.add_to_resource_policy(
              iam.PolicyStatement(
                 actions=[
-                      "s3:DeleteObject*",
-                        "s3:GetBucket*",
-                        "s3:List*",
-                        "s3:PutObject",
-                        "s3:PutObjectAcl"
+                    "s3:DeleteObject*",
+                    "s3:GetBucket*",
+                    "s3:List*",
+                    "s3:PutObject",
+                    "s3:PutObjectAcl"
                 ],
                 resources=[f"{bucket_documents.bucket_arn}/*"],
                 principals=[iam.ServicePrincipal("lambda.amazonaws.com")]
@@ -138,7 +148,7 @@ class AgentDocumentAnalysisStack(Stack):
                 "BUCKET_NAME": bucket_documents.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
-                "SNS_TOPIC_CHART_CREATOR":topic.topic_arn,
+                "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
                 "TABLE_TRANSACCION": table.table_name
             },
             memory_size=1024,
@@ -156,7 +166,7 @@ class AgentDocumentAnalysisStack(Stack):
             environment={
                 "BUCKET_NAME": bucket_documents.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
-                "SNS_TOPIC_CHART_CREATOR":topic.topic_arn,
+                "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
                 "TABLE_TRANSACCION": table.table_name
             },
             memory_size=1024,
