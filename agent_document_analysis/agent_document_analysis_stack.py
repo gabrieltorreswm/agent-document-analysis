@@ -45,7 +45,7 @@ class AgentDocumentAnalysisStack(Stack):
         #     task_definition="agent-chart"
         # )}
 
-        table = dynamodb.Table(
+        table_transaction = dynamodb.Table(
             self, f"{self.stack_name}-transaction",
             table_name=f"{self.stack_name}-transaction",  # Optional: custom name
             partition_key=dynamodb.Attribute(
@@ -71,8 +71,13 @@ class AgentDocumentAnalysisStack(Stack):
         lambda_role_bedrock.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole"))
         
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
-            actions=["bedrock:InvokeModel"],
+            actions=["bedrock:InvokeModel","ses:SendEmail"],
             resources=["arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0"]
+        ))
+
+        lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
+            actions=["ses:SendEmail"],
+            resources=["arn:aws:ses:us-east-1:471112847654:identity/gtorresp@bolivariano.com"]
         ))
 
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
@@ -93,6 +98,11 @@ class AgentDocumentAnalysisStack(Stack):
             resources=[f"arn:aws:lambda:us-east-1:471112847654:layer:numpy_layer:*"]
         ))
 
+        lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
+            actions=["dynamodb:GetItem"],
+            resources=[table_transaction.table_arn]
+        ))
+
         sns_topic = sns.Topic(self, "FinOpsTopic",
             display_name="AWS FinOps Cost Alerts GT",
             topic_name=f"{self.stack_name}-notify-email"
@@ -102,6 +112,7 @@ class AgentDocumentAnalysisStack(Stack):
             actions=["sns:Publish"],
             resources=[sns_topic.topic_arn, topic_chart_creator.topic_arn]
         ))
+
 
         # Define the S3 bucket
         bucket_documents = s3.Bucket(
@@ -134,6 +145,15 @@ class AgentDocumentAnalysisStack(Stack):
             auto_delete_objects=True  # Delete objects with the stack
         )
 
+        bucket_result_analysis.add_to_resource_policy(
+             iam.PolicyStatement(
+                actions=[
+                    "s3:GetObject"
+                ],
+                resources=[f"{bucket_result_analysis.bucket_arn}/*"],
+                principals=[iam.ArnPrincipal(f"{lambda_role_bedrock.role_arn}"),iam.ServicePrincipal("lambda.amazonaws.com")]
+            )
+        )
 
 
         # The code that defines your stack goes here
@@ -147,7 +167,7 @@ class AgentDocumentAnalysisStack(Stack):
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
-                "TABLE_TRANSACCION": table.table_name
+                "TABLE_TRANSACCION": table_transaction.table_name
             },
             memory_size=1024,
             role=lambda_role_bedrock,
@@ -165,7 +185,7 @@ class AgentDocumentAnalysisStack(Stack):
                 "BUCKET_NAME": bucket_result_analysis.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
-                "TABLE_TRANSACCION": table.table_name
+                "TABLE_TRANSACCION": table_transaction.table_name
             },
             memory_size=1024,
             role=lambda_role_bedrock,
@@ -175,7 +195,7 @@ class AgentDocumentAnalysisStack(Stack):
 
         rule_message.add_target(targets.LambdaFunction(notification_summary))
         sns_topic.grant_publish(process_document)
-        table.grant_write_data(process_document)
+        table_transaction.grant_write_data(process_document)
 
         # Add S3 event notification (trigger) to invoke Lambda on object creation
         bucket_documents.add_event_notification(
