@@ -36,7 +36,7 @@ def sendMessageEmail(data,url_signed):
                 "ToAddresses": ["gtorresp@bolivariano.com"]  # Can also be a list
             },
             Message={
-                "Subject": {"Data": "🚀 AWS FinOps Cost Report"},
+                "Subject": {"Data": "🚀 AWS FinOps Rerporte de Costos"},
                 "Body": {
                     "Html": {"Data": html_body}
                 }
@@ -103,9 +103,6 @@ def get_body_message(data_response_model,url_signed):
         # Format recommendations
         recommendations_str = "\n".join([f"   - {rec}" for rec in recommendations])
 
-
-        email_subject = "🚀 AWS FinOps Cost Report"
-
         email_body = f"""
             <html>
             <head>
@@ -120,15 +117,15 @@ def get_body_message(data_response_model,url_signed):
             </head>
             <body>
                 <p>¡Hola! Espero todo este yendo muy bien. Aca les comparto el reporte de Cognito, generado y analizado por un agente IA cloud</p>
-                <p>Queremos llevar nuestros análisis financieros en la nube al siguiente nivel. Nuestra meta es desarrollar un agente inteligente que rastree y explique los cambios en los costos de nuestras aplicaciones AWS.</p>
+                <p>Queremos llevar nuestros análisis financieros en la nube al siguiente nivel. Buscamos refinar nuestro agente inteligente actual para que profundice aún más en el análisis de las fluctuaciones de costos de nuestras aplicaciones en AWS.</p>
                 
-                <h3>📅 Costos Mensuales Mas Alto</h3>
-                <pre>{trend_str}</pre>
+                <h3>📌 Top Costos Total por Aplicación más alto</h3>
+                <pre>{top_apps_str}</pre>
 
                 <img src="{url_signed}" alt="Chart" style="height: 400px; width: 700px">Cargando Imagen...</img>
 
-                <h3>📌 Top Costos por Aplicación más alto</h3>
-                <pre>{top_apps_str}</pre>
+                <h3>📅 Costos Mensuales Mas Alto</h3>
+                <pre>{trend_str}</pre>
 
                 <h3>🚨 Anomalías de costos</h3>
                 <pre>{anomalies_str if cost_anomalies else "No anomalies detected."}</pre>
