@@ -110,7 +110,7 @@ def get_body_message(data_response_model,url_signed):
             <html>
             <head>
                 <style>
-                body {{ font-family: Arial, sans-serif; color: #333; }}
+                body {{ font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #333; }}
                 h2 {{ color: #2F855A; }}
                 h3 {{ margin-bottom: 0; }}
                 p {{ margin-top: 0; }}
@@ -119,12 +119,13 @@ def get_body_message(data_response_model,url_signed):
                 </style>
             </head>
             <body>
-                <p>¡Hola! Espero que les esté yendo genial también. Aquí tienen el reporte sobre Cognito, un poco más dinámico:</p>
-
-                <h3>📅 Costos Mensuales</h3>
+                <p>¡Hola! Espero todo este yendo muy bien. Aca les comparto el reporte de Cognito, generado y analizado por un agente IA cloud</p>
+                <p>Queremos llevar nuestros análisis financieros en la nube al siguiente nivel. Nuestra meta es desarrollar un agente inteligente que rastree y explique los cambios en los costos de nuestras aplicaciones AWS.</p>
+                
+                <h3>📅 Costos Mensuales Mas Alto</h3>
                 <pre>{trend_str}</pre>
 
-                <img src="{url_signed}" alt="Chart" style="height: 400px; width: 700px"/>
+                <img src="{url_signed}" alt="Chart" style="height: 400px; width: 700px">Cargando Imagen...</img>
 
                 <h3>📌 Top Costos por Aplicación más alto</h3>
                 <pre>{top_apps_str}</pre>

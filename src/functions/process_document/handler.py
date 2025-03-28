@@ -50,12 +50,11 @@ def process_document(event, context):
             print(f"reponse text {json.loads(response['content'][0]['text'])}")
 
             response_model = json.loads(response['content'][0]['text']) 
-            sent_notification = send_email(response_model)
             put_transaction_id = put_new_transaccion(transactionId, response_model)
             sent_topic_notification = sendMessageTopic(transactionId)
 
             # Parse the JSON response
-            print(f"Message Send: {sent_notification} in bucket sent_topic_notification, transactionId {transactionId}")
+            print(f"Message n bucket sent_topic_notification, transactionId {transactionId}")
 
             return response
 
@@ -194,87 +193,6 @@ def invoke_claude_3_multimodal(prompt, csv_table):
         print(f"Failed to parse Bedrock response: {str(err)}")
         raise
 
-
-def send_email(data_response_model):
-        try:
-             # Custom email subject & message body
-            print(f'data_response_model : {data_response_model}')
-
-            total_cost = data_response_model["costSummary"]["totalCost"]
-            top_apps = data_response_model["costSummary"]["costByApplicationsByDesc"]
-            trend = data_response_model["costSummary"]["CostTrend"]
-            underutilized_resources = data_response_model["optimizationOpportunities"]["underutilizedResources"]
-            over_provisioned_resources = data_response_model["optimizationOpportunities"]["overProvisionedResources"]
-            cost_anomalies = data_response_model["costAnomalies"]["unexpectedSpikes"]
-            recommendations = data_response_model["recommendations"]["costSavingStrategies"]
-
-            # Format top-cost applications
-            top_apps_str = "\n".join(
-                [f"- {app['application']}: {app['cost']}" for app in top_apps]
-            )
-
-            # Format daily cost trend
-            trend_str = "\n".join(
-                [f"* {app['month']}: {app['cost']}" for app in trend]
-            )
-
-            # Format underutilized resources
-            underutilized_str = "\n".join([f"   - {item}" for item in underutilized_resources])
-
-            # Format over-provisioned resources
-            over_provisioned_str = "\n".join([f"   - {item}" for item in over_provisioned_resources])
-
-            # Format cost anomalies
-            anomalies_str = "\n".join(
-                [f"* {anomaly}" for anomaly in cost_anomalies]
-            )
-
-            # Format recommendations
-            recommendations_str = "\n".join([f"   - {rec}" for rec in recommendations])
-
-
-            email_subject = "🚀 AWS FinOps Cost Report"
-            email_body = f"""
-            Hola a todos, espero todo este yendo muy bien.
-
-            Envio el último reporte de costos:
-
-            📊 **Total Costos:** {total_cost}
-
-            **Costos por Aplicación:**
-                {top_apps_str}
-
-            📅 **Costos Mensuales:**
-                {trend_str}
-
-            ⚠️ **Recursos subutilizados:**
-                {underutilized_str if underutilized_resources else "No underutilized resources detected."}
-
-            ⚙️ **Recursos sobreaprovisionados::**
-                {over_provisioned_str if over_provisioned_resources else "No over-provisioned resources detected."}
-
-            🚨 **Anomalías de costos (picos inesperados)::**
-                {anomalies_str if cost_anomalies else "No anomalies detected."}
-
-            💡 **Recomendaciones para ahorrar costos::**
-                {recommendations_str if recommendations else "No recommendations at this time."}
-
-            Saludos,  
-            Servicios Cloud
-            """
-
-            # Publish message to SNS
-            response = sns_client.publish(
-                TopicArn=SNS_TOPIC_EMAIL,
-                Message=email_body,  # Email body
-                Subject=email_subject  # Email subject
-            )
-
-            return response
-
-        except Exception as ex: 
-            print(f"error {ex}")
-            return "Ok"
 
 def put_new_transaccion(transactionId, response_model):
     print(f"model response {response_model}")
