@@ -78,6 +78,8 @@ def get_body_message(data_response_model,url_signed):
         over_provisioned_resources = data_response_model["optimizationOpportunities"]["overProvisionedResources"]
         cost_anomalies = data_response_model["costAnomalies"]["unexpectedSpikes"]
         recommendations = data_response_model["recommendations"]["costSavingStrategies"]
+        forecastingInsights = data_response_model["recommendations"]["forecastingInsights"]
+        conclusion = data_response_model["forecasting"]["conclusion"]
 
         # Format top-cost applications
         top_apps_str = "\n".join(
@@ -103,6 +105,9 @@ def get_body_message(data_response_model,url_signed):
         # Format recommendations
         recommendations_str = "\n".join([f"   - {rec}" for rec in recommendations])
 
+        # Format forecastingInsights
+        forecastingInsights_str = "\n".join([f"   - {rec}" for rec in forecastingInsights])
+
         email_body = f"""
             <html>
             <head>
@@ -124,6 +129,9 @@ def get_body_message(data_response_model,url_signed):
 
                 <img src="{url_signed}" alt="Chart" style="height: 400px; width: 700px">Cargando Imagen...</img>
 
+                <h3>💡 Pronostico y tendencias</h3>
+                <pre>{forecastingInsights_str if forecastingInsights else "No recommendations at this time."}</pre>
+
                 <h3>📅 Costos Mensuales Mas Alto</h3>
                 <pre>{trend_str}</pre>
 
@@ -133,6 +141,10 @@ def get_body_message(data_response_model,url_signed):
                 <h3>💡 Recomendaciones para ahorrar costos</h3>
                 <pre>{recommendations_str if recommendations else "No recommendations at this time."}</pre>
 
+
+                <h3>💡 Analisis/Conclusion</h3>
+                <pre>{conclusion}</pre>
+                
                 <p style="margin-top: 30px;">
                 Saludos,<br/>
                 <strong>Servicios Cloud</strong>
