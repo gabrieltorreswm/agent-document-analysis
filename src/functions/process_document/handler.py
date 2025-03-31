@@ -113,6 +113,7 @@ def invoke_claude_3_multimodal(prompt, csv_table):
     try:
         print(f"start invoka bedrock")
         response = bedrock.invoke_model(modelId=MODEL_ID, body=json.dumps(request_body))
+        print(f"reponse model raw {response}")
         return json.loads(response['body'].read())
     except bedrock.exceptions.ClientError as err:
         print(f"Bedrock ClientError: {err.response['Error']['Code']}: {err.response['Error']['Message']}")

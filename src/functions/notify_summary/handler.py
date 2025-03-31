@@ -55,7 +55,7 @@ def get_url_s3(transactionId):
         url = s3.generate_presigned_url(
             ClientMethod='get_object',
             Params={'Bucket': BUCKET_NAME, 'Key': object_key},
-            ExpiresIn=3600  # 1 hour
+            ExpiresIn=1440  # 1 hour
         )
 
         return url
@@ -144,7 +144,7 @@ def get_body_message(data_response_model,url_signed):
 
                 <h3>💡 Analisis/Conclusion</h3>
                 <pre>{conclusion}</pre>
-                
+
                 <p style="margin-top: 30px;">
                 Saludos,<br/>
                 <strong>Servicios Cloud</strong>
