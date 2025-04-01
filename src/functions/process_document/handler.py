@@ -4,11 +4,10 @@ import io
 import csv
 import os
 import uuid
-from datetime import datetime
 from promps import generate_prompt
+from servicesData import put_new_transaccion
 
 sns_client = boto3.client('sns')
-dynamodb = boto3.resource('dynamodb')
 
 # Initialize AWS clients
 s3 = boto3.client('s3')
@@ -17,7 +16,7 @@ MODEL_ID = os.environ['MODEL_ID']
 SNS_TOPIC_EMAIL = os.environ['SNS_TOPIC_EMAIL']
 BUCKET_NAME = os.environ['BUCKET_NAME']
 SNS_TOPIC_CHART_CREATOR = os.environ['SNS_TOPIC_CHART_CREATOR']
-TABLE_TRANSACCION = os.environ['TABLE_TRANSACCION']
+
 
 def process_document(event, context):
 
@@ -66,10 +65,7 @@ def convert_csv(csv_file):
     csv_content = ""
     csv_reader = csv.reader(io.StringIO(csv_file))
     csv_content = [row for row in csv_reader]
-
-    # for row in csv_content:
-    #     csv_content += ", ".join() + "\n"
-
+    
     print(f' return convert csv : {csv_content}')
     return csv_content
 
@@ -121,23 +117,3 @@ def invoke_claude_3_multimodal(prompt, csv_table):
     except json.JSONDecodeError as err:
         print(f"Failed to parse Bedrock response: {str(err)}")
         raise
-
-
-def put_new_transaccion(transactionId, response_model):
-    print(f"model response {response_model}")
-    item = {
-        "transactionId": transactionId ,
-        "createdAt":datetime.utcnow().isoformat(),
-        "response_model": json.dumps(response_model)
-    }
-     
-    try:
-        table_transaction = dynamodb.Table(TABLE_TRANSACCION)
-        response = table_transaction.put_item(Item=item)
-
-        print(f"table transaccion respponse: ${response}")
-        return response
-        
-    except Exception as ex:
-        print(f"ex ${ex}")
-        

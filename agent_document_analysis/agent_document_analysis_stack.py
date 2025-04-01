@@ -39,11 +39,19 @@ class AgentDocumentAnalysisStack(Stack):
             }
         )
 
-        # it's manualy from the aws console
-        # rule.add_target(targets.EcsTask(
-        #     cluster="agent-document-finops",
-        #     task_definition="agent-chart"
-        # )}
+        table_layer_memory = dynamodb.Table(
+            self, f"{self.stack_name}-memory",
+            table_name=f"{self.stack_name}-memory",  # Optional: custom name
+            partition_key=dynamodb.Attribute(
+                name="PK",
+                type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="SK",
+                type=dynamodb.AttributeType.STRING
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST  # On-demand pricing
+        )
 
         table_transaction = dynamodb.Table(
             self, f"{self.stack_name}-transaction",
@@ -123,20 +131,6 @@ class AgentDocumentAnalysisStack(Stack):
             auto_delete_objects=True  # Delete objects with the stack
         )
 
-        # bucket_documents.add_to_resource_policy(
-        #      iam.PolicyStatement(
-        #         actions=[
-        #             "s3:DeleteObject*",
-        #             "s3:GetBucket*",
-        #             "s3:List*",
-        #             "s3:PutObject",
-        #             "s3:PutObjectAcl"
-        #         ],
-        #         resources=[f"{bucket_documents.bucket_arn}/*"],
-        #         principals=[iam.ServicePrincipal("lambda.amazonaws.com")]
-        #     )
-        # )
-
         bucket_result_analysis = s3.Bucket(
             self, "result-analysis",
             bucket_name= f"{self.stack_name}-result-analysis",
@@ -167,7 +161,8 @@ class AgentDocumentAnalysisStack(Stack):
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
-                "TABLE_TRANSACCION": table_transaction.table_name
+                "TABLE_TRANSACCION": table_transaction.table_name,
+                "TABLE_MEMORY_LAYER": table_layer_memory.table_name
             },
             memory_size=1024,
             role=lambda_role_bedrock,
@@ -196,6 +191,7 @@ class AgentDocumentAnalysisStack(Stack):
         rule_message.add_target(targets.LambdaFunction(notification_summary))
         sns_topic.grant_publish(process_document)
         table_transaction.grant_write_data(process_document)
+        table_layer_memory.grant_write_data(process_document)
 
         # Add S3 event notification (trigger) to invoke Lambda on object creation
         bucket_documents.add_event_notification(
@@ -205,3 +201,4 @@ class AgentDocumentAnalysisStack(Stack):
 
         # Grant S3 bucket read permissions to Lambda
         bucket_documents.grant_read(process_document)
+        
