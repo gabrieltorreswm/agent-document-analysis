@@ -5,7 +5,7 @@ import csv
 import os
 import uuid
 from promps import generate_prompt
-from servicesData import put_new_transaccion
+from servicesData import put_transaccion,put_memory,get_memory
 
 sns_client = boto3.client('sns')
 
@@ -37,18 +37,20 @@ def process_document(event, context):
             # get the prompt 
             prompt = generate_prompt()
             csv_content = convert_csv(image_data.decode('utf-8'))
+            get_memory_response = get_memory("cognito","2025-04","month")
 
             response = invoke_claude_3_multimodal(prompt, csv_content)
 
             print(f'response model raw: {response}')
-            print(f"reponse text {json.loads(response['content'][0]['text'])}")
+            print(f"reponse text {json.dumps(response['content'][0]['text'],indent=4)}")
 
             response_model = json.loads(response['content'][0]['text']) 
-            put_transaction_id = put_new_transaccion(transactionId, response_model)
+            put_transaction_response = put_transaccion(transactionId, response_model)
+            put_memory_response = put_memory(transactionId,response_model)
             sent_topic_notification = sendMessageTopic(transactionId)
 
             # Parse the JSON response
-            print(f"Message n bucket {sent_topic_notification}, transactionId {transactionId} , put_transaction_id {put_transaction_id}")
+            print(f"Message n bucket {sent_topic_notification}, transactionId {transactionId} , put_transaction_id {put_transaction_response}, put_memory {put_memory_response}")
 
             return response
 
@@ -65,7 +67,7 @@ def convert_csv(csv_file):
     csv_content = ""
     csv_reader = csv.reader(io.StringIO(csv_file))
     csv_content = [row for row in csv_reader]
-    
+
     print(f' return convert csv : {csv_content}')
     return csv_content
 

@@ -111,6 +111,11 @@ class AgentDocumentAnalysisStack(Stack):
             resources=[table_transaction.table_arn]
         ))
 
+        lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
+            actions=["dynamodb:Query"],
+            resources=[table_layer_memory.table_arn]
+        ))
+
         sns_topic = sns.Topic(self, "FinOpsTopic",
             display_name="AWS FinOps Cost Alerts GT",
             topic_name=f"{self.stack_name}-notify-email"

@@ -72,8 +72,8 @@ def get_body_message(data_response_model,url_signed):
         print(f'data_response_model : {data_response_model}')
 
         total_cost = data_response_model["costSummary"]["totalCost"]
-        top_apps = data_response_model["costSummary"]["costByApplicationsByDesc"]
-        trend = data_response_model["costSummary"]["CostTrend"]
+        top_apps = data_response_model["costSummary"]["costByApplicationsByMonths"]
+        costbymonth = data_response_model["costSummary"]["totalCostByMonths"]
         underutilized_resources = data_response_model["optimizationOpportunities"]["underutilizedResources"]
         over_provisioned_resources = data_response_model["optimizationOpportunities"]["overProvisionedResources"]
         cost_anomalies = data_response_model["costAnomalies"]["unexpectedSpikes"]
@@ -87,8 +87,8 @@ def get_body_message(data_response_model,url_signed):
         )
 
         # Format daily cost trend
-        trend_str = "\n".join(
-            [f"* {app['month']}: {app['cost']}" for app in trend]
+        costbymonth_str = "\n".join(
+            [f"* {app['month']}: {app['cost']}" for app in costbymonth]
         )
 
         # Format underutilized resources
@@ -124,21 +124,18 @@ def get_body_message(data_response_model,url_signed):
                 <p>¡Hola! Espero todo este yendo muy bien. Aca les comparto el reporte de Cognito, generado y analizado por un agente IA cloud</p>
                 <p>Queremos llevar nuestros análisis financieros en la nube al siguiente nivel. Buscamos refinar nuestro agente inteligente actual para que profundice aún más en el análisis de las fluctuaciones de costos de nuestras aplicaciones en AWS.</p>
                 
-                <h3>📌 Top Costos Total por Aplicación más alto</h3>
-                <pre>{top_apps_str}</pre>
+                <h3>📊Costos Mensuales </h3>
+                <pre>{costbymonth_str if costbymonth_str else "No recommendations at this time."}</pre>
 
-                <img src="{url_signed}" alt="Chart" style="height: 400px; width: 700px">Cargando Imagen...</img>
+                <img src="{url_signed}" alt="Chart" style="height: 400px; width: 700px" /img>
 
-                <h3>💡 Pronostico y tendencias</h3>
+                <h3>📣 Pronostico y tendencias</h3>
                 <pre>{forecastingInsights_str if forecastingInsights else "No recommendations at this time."}</pre>
-
-                <h3>📅 Costos Mensuales Mas Alto</h3>
-                <pre>{trend_str}</pre>
 
                 <h3>🚨 Anomalías de costos</h3>
                 <pre>{anomalies_str if cost_anomalies else "No anomalies detected."}</pre>
 
-                <h3>💡 Recomendaciones para ahorrar costos</h3>
+                <h3>🧠 Recomendaciones para ahorrar costos</h3>
                 <pre>{recommendations_str if recommendations else "No recommendations at this time."}</pre>
 
 
