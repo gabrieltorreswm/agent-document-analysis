@@ -97,7 +97,7 @@ def sendMessageTopic(payload):
 def invoke_claude_3_multimodal(prompt, csv_table):
     request_body = {
         "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 2048,
+        "max_tokens": 2300,
         "messages": [
             {
                 "role": "user",

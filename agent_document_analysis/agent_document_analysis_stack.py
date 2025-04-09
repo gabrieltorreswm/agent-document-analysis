@@ -171,7 +171,7 @@ class AgentDocumentAnalysisStack(Stack):
             },
             memory_size=1024,
             role=lambda_role_bedrock,
-            timeout=Duration.seconds(90),
+            timeout=Duration.seconds(120),
             #layers=[matplotlib_layer],
             code=_lambda.Code.from_asset("src/functions/process_document")
         )
