@@ -6,6 +6,8 @@ import os
 import uuid
 from promps import generate_prompt
 from servicesData import put_transaccion,put_memory,get_memory
+from datetime import datetime
+from urllib.parse import unquote
 
 sns_client = boto3.client('sns')
 
@@ -25,6 +27,10 @@ def process_document(event, context):
     try:
             bucket_name = event['Records'][0]["s3"]["bucket"]["name"]
             object_key = event['Records'][0]["s3"]["object"]["key"]
+            object_key_unquote = unquote(object_key)
+            object_key__search = object_key_unquote.replace("+", " ")
+
+            print(f"object_key {object_key} uncode_onjectKey {unquote(object_key)}")
 
             transactionId = str(uuid.uuid4())
 
@@ -32,12 +38,13 @@ def process_document(event, context):
                 print(f"file not valid")
                 return { 'statusCode': 403 , 'message': "file format is not valid"}
             
-            image_data = s3.get_object(Bucket=bucket_name, Key= object_key)['Body'].read()
+            image_data = s3.get_object(Bucket=bucket_name, Key= object_key__search)['Body'].read()
         
             # get the prompt 
             prompt = generate_prompt()
             csv_content = convert_csv(image_data.decode('utf-8'))
-            get_memory_response = get_memory("cognito","2025-04","month")
+            current_month = datetime.utcnow().strftime("%Y-%m")
+            get_memory_response = get_memory("cognito",current_month,"month")
 
             response = invoke_claude_3_multimodal(prompt, csv_content)
 

@@ -40,7 +40,7 @@ def generate_prompt():
         •	Indicar si la proyección del siguiente mes es al alza o a la baja.
         •	Proporcionar una estimación numérica de cuánto aumentará o disminuirá el costo total.
         •	Incluir una conclusión razonada que explique por qué se espera dicha tendencia (por ejemplo: comportamiento estacional, patrones repetidos, crecimiento sostenido, optimización reciente, etc.).
-        •   En la propiedad conclusion del bloque forecasting, redacte una conclusión clara en español de no mas de 2 lineas que incluya valores numéricos reales (como el costo actual, costo proyectado y el porcentaje de cambio). Esta explicación debe ayudar al usuario a entender fácilmente por qué se proyecta una tendencia al alza o a la baja.
+        •   En la propiedad conclusion del bloque forecasting, redacte una conclusión clara en español de no mas de una linea y media que incluya valores numéricos reales (como el costo actual, costo proyectado y el porcentaje de cambio). Esta explicación debe ayudar al usuario a entender fácilmente por qué se proyecta una tendencia al alza o a la baja.
 
         🛠 Instrucciones para el análisis:
        	•	Utilizar el archivo CSV proporcionado como fuente única para extraer y calcular toda la información solicitada.
