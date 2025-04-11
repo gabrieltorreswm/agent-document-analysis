@@ -19,8 +19,7 @@ SNS_TOPIC_EMAIL = os.environ['SNS_TOPIC_EMAIL']
 BUCKET_NAME = os.environ['BUCKET_NAME']
 SNS_TOPIC_CHART_CREATOR = os.environ['SNS_TOPIC_CHART_CREATOR']
 
-
-def process_document(event, context):
+def process_document_month(event, context):
 
     print("Event received:", json.dumps(event, indent=2))
 
@@ -52,23 +51,21 @@ def process_document(event, context):
             print(f"reponse text {json.dumps(response['content'][0]['text'],indent=4)}")
 
             response_model = json.loads(response['content'][0]['text']) 
-            put_transaction_response = put_transaccion(transactionId, response_model)
-            put_memory_response = put_memory(transactionId,response_model)
-            sent_topic_notification = sendMessageTopic(transactionId)
+            put_transaction_response = put_transaccion(transactionId, response_model,"month")
+            put_memory_response = put_memory(response_model,"month")
+            sent_topic_notification = sendMessageTopic(transactionId,"month")
 
             # Parse the JSON response
             print(f"Message n bucket {sent_topic_notification}, transactionId {transactionId} , put_transaction_id {put_transaction_response}, put_memory {put_memory_response}")
 
-            return response
+            return {
+                "statusCode": 200,
+                "body": f"Message n bucket {sent_topic_notification}, transactionId {transactionId} , put_transaction_id {put_transaction_response}, put_memory {put_memory_response}"
+            }
 
     except Exception as ex: 
         print(f"Error general {ex}")
-
-    return {
-        "statusCode": "",
-        "body":"process document"
-    }
-
+        raise Exception(f"The model not return the output expected") 
 
 def convert_csv(csv_file):
     csv_content = ""
@@ -78,13 +75,13 @@ def convert_csv(csv_file):
     print(f' return convert csv : {csv_content}')
     return csv_content
 
-def sendMessageTopic(payload):
+def sendMessageTopic(payload, report_type):
     # Publish to SNS topic
     print(f"payload {payload} and ar {SNS_TOPIC_CHART_CREATOR}")
     try:
         response = sns_client.publish(
             TopicArn=SNS_TOPIC_CHART_CREATOR,
-            Message=json.dumps({ "transactionId": payload }),
+            Message=json.dumps({ "transactionId": payload , "report_type": report_type, "bucket_name": BUCKET_NAME}),
             Subject="Generate a chart"  # optional
         )
 
@@ -92,12 +89,12 @@ def sendMessageTopic(payload):
 
         return response
     except Exception as ex:
-        print(f"Exception ${ex}")
+        print(f"Exception {ex}")
 
 def invoke_claude_3_multimodal(prompt, csv_table):
     request_body = {
         "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 2300,
+        "max_tokens": 2400,
         "messages": [
             {
                 "role": "user",

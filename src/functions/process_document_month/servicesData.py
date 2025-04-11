@@ -11,10 +11,11 @@ dynamodb = boto3.resource('dynamodb')
 TABLE_TRANSACCION = os.environ['TABLE_TRANSACCION']
 TABLE_MEMORY_LAYER = os.environ['TABLE_MEMORY_LAYER']
 
-def put_transaccion(transactionId, response_model):
+def put_transaccion(transactionId, response_model,report_type):
     print(f"model response {response_model}")
     item = {
-        "transactionId": transactionId ,
+        "transactionId": transactionId,
+        "report_type": report_type,
         "createdAt": datetime.utcnow().isoformat(),
         "response_model": json.dumps(response_model)
     }
@@ -30,7 +31,7 @@ def put_transaccion(transactionId, response_model):
         print(f"ex ${ex}")
 
 
-def put_memory(transactionId, response_model):
+def put_memory(response_model,report_type):
     print(f"put memory {response_model}")
 
     current_month = datetime.utcnow().strftime("%Y-%m")
@@ -38,7 +39,7 @@ def put_memory(transactionId, response_model):
     print(current_month)  # → "2025-03"
     item = {
         "PK": f"memory#services#cognito" ,
-        "SK": f"{current_month}#month#{uuid_report}" ,
+        "SK": f"{current_month}#{report_type}#{uuid_report}" ,
         "context": json.dumps(response_model),
         "createdAt": datetime.utcnow().isoformat(),
     }

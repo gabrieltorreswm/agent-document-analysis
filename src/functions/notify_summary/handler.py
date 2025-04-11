@@ -6,28 +6,41 @@ ses_client = boto3.client("ses")  # use your region
 s3 = boto3.client('s3')
 dynamodb = boto3.resource("dynamodb")
 
-BUCKET_NAME = os.environ['BUCKET_NAME']
+
 TABLE_TRANSACCION = os.environ['TABLE_TRANSACCION']
 
 def notify_summary(event, context):
-    print(f"Event received: {event}")
-    detail = event.get("detail", {})
-    transactionId = detail.get("transactionId")
-    # Example: get the detail
-    print("🔍 detail:",detail.get("transactionId"))
-    url_signed = get_url_s3(transactionId)
-    mode_data_response = get_model_reponse_by_id(transactionId)
-    sendMessageEmail(mode_data_response,url_signed)
+    
+    try:
+        # Get the data from the event
+        print(f"Event received: {event}")
+        detail = event.get("detail", {})
+        transactionId = detail.get("transactionId")
+        bucket_name = detail.get("bucket_name")
+        report_type = detail.get("report_type")
 
-    return { "statusCode":200 }
+        # Example: get the detail
+        print(f"🔍 detail: {transactionId} {bucket_name} {report_type}")
+
+        # Get the data from the dynamodb
+        url_signed = get_url_s3(transactionId,bucket_name)
+        mode_data_response = get_model_reponse_by_id(transactionId)
+
+        # Send the email
+        sendMessageEmail(mode_data_response,url_signed,report_type)
+
+        return { "statusCode":200 }
+    except Exception as ex:
+        print(f"Error: {ex}")
+        return { "statusCode" :500 }
 
 
 
 
-def sendMessageEmail(data,url_signed):
+def sendMessageEmail(data,url_signed,report_type):
     print(f"url_signed: {url_signed} {data}")
     response_model = data.get("response_model")
-    html_body = get_body_message(json.loads(response_model),url_signed)
+    html_body = get_body_message(json.loads(response_model),url_signed,report_type)
 
     try:
         response = ses_client.send_email(
@@ -48,13 +61,13 @@ def sendMessageEmail(data,url_signed):
         print(f"Error: {ex}")
 
 
-def get_url_s3(transactionId):
+def get_url_s3(transactionId,bucket_name):
     try:
         object_key = f"cost-chart-{transactionId}.png"
         s3 = boto3.client("s3")
         url = s3.generate_presigned_url(
             ClientMethod='get_object',
-            Params={'Bucket': BUCKET_NAME, 'Key': object_key},
+            Params={'Bucket': bucket_name, 'Key': object_key},
             ExpiresIn=1440  # 1 hour
         )
 
@@ -65,7 +78,7 @@ def get_url_s3(transactionId):
 
 
 
-def get_body_message(data_response_model,url_signed):
+def get_body_message(data_response_model,url_signed,report_type):
 
     try:
          # Custom email subject & message body

@@ -49,7 +49,7 @@ def generate_prompt():
         •	En caso de detectar anomalías, explicar sus posibles causas.
         •   En el bloque forecasting, el campo variationPercentage debe expresar el factor de variación decimal:
                 "1.10" representa un aumento del 10%, "0.90" representa una disminución del 10%.
-        •	⚠️ La respuesta debe estar completamente redactada en español.
+        •	⚠️ La respuesta debe estar completamente redactada en español, ademas se concreto, evita mucho texto en tus recomendaciones.
 
         🔄 Importante sobre el bloque costByApplicationsByMonths:
         • Este bloque debe contener todas las combinaciones únicas de aplicación y mes (o fecha si es diaria), con su respectivo costo.
@@ -59,7 +59,7 @@ def generate_prompt():
 
         📤 Formato de entrega:
 
-        Se solicita entregar únicamente un bloque en formato JSON estructurado de la siguiente manera:
+        • Se solicita entregar unica y exclusivamente un bloque en formato JSON estructurado, sin texto adicional, de la siguiente manera:
 
         {
             "costSummary": {

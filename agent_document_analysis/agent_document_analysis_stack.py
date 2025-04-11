@@ -96,7 +96,7 @@ class AgentDocumentAnalysisStack(Stack):
         # Add inline policy to the Lambda role
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
-            actions=["s3:GetObject"],
+            actions=["s3:GetObject","s3:GetBucketTagging"],
             resources=[f"arn:aws:s3:::bedrock-multimodal-s3/*"]
         ))
 
@@ -128,41 +128,67 @@ class AgentDocumentAnalysisStack(Stack):
 
 
         # Define the S3 bucket
-        bucket_documents = s3.Bucket(
-            self, "documents",
-            bucket_name= f"{self.stack_name}-documents",
+        bucket_input_report_month = s3.Bucket(
+            self, "input-report-month",
+            bucket_name= f"{self.stack_name}-input-report-month",
             versioned=True,  # Enables versioning
             removal_policy= RemovalPolicy.DESTROY,  # Delete on stack deletion
             auto_delete_objects=True  # Delete objects with the stack
         )
 
-        bucket_result_analysis = s3.Bucket(
-            self, "result-analysis",
-            bucket_name= f"{self.stack_name}-result-analysis",
+        bucket_input_report_daily = s3.Bucket(
+            self, "input-report-daily",
+            bucket_name= f"{self.stack_name}-input-report-daily",
             versioned=True,  # Enables versioning
             removal_policy= RemovalPolicy.DESTROY,  # Delete on stack deletion
             auto_delete_objects=True  # Delete objects with the stack
         )
 
-        bucket_result_analysis.add_to_resource_policy(
+        bucket_result_analysis_month = s3.Bucket(
+            self, "output-analysis-month",
+            bucket_name= f"{self.stack_name}-output-analysis-month",
+            versioned=True,  # Enables versioning
+            removal_policy= RemovalPolicy.DESTROY,  # Delete on stack deletion
+            auto_delete_objects=True  # Delete objects with the stack
+        )
+
+        bucket_result_analysis_month.add_to_resource_policy(
              iam.PolicyStatement(
                 actions=[
-                    "s3:GetObject"
+                    "s3:GetObject",
                 ],
-                resources=[f"{bucket_result_analysis.bucket_arn}/*"],
+                resources=[f"{bucket_result_analysis_month.bucket_arn}/*"],
+                principals=[iam.ArnPrincipal(f"{lambda_role_bedrock.role_arn}"),iam.ServicePrincipal("lambda.amazonaws.com")]
+            )
+        )
+        bucket_result_analysis_daily = s3.Bucket(
+            self, "output-analysis-daily",
+            bucket_name= f"{self.stack_name}-output-analysis-daily",
+            versioned=True,  # Enables versioning
+            removal_policy= RemovalPolicy.DESTROY,  # Delete on stack deletion
+            auto_delete_objects=True  # Delete objects with the stack
+        )
+
+        bucket_result_analysis_daily.add_to_resource_policy(
+             iam.PolicyStatement(
+                actions=[
+                    "s3:GetObject",
+                ],
+                resources=[f"{bucket_result_analysis_daily.bucket_arn}/*"],
                 principals=[iam.ArnPrincipal(f"{lambda_role_bedrock.role_arn}"),iam.ServicePrincipal("lambda.amazonaws.com")]
             )
         )
 
 
         # The code that defines your stack goes here
-        process_document = _lambda.Function(
-            self, "process_document",
-            function_name= f'{self.stack_name}-process-document',
+        process_document_month = _lambda.Function(
+            self, "process_document_month",
+            function_name= f'{self.stack_name}-process-document-month',
             runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="handler.process_document",
+            handler="handler.process_document_month",
+            retry_attempts=1,
             environment={
-                "BUCKET_NAME": bucket_documents.bucket_name,
+                "BUCKET_NAME": bucket_input_report_month.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
@@ -172,8 +198,27 @@ class AgentDocumentAnalysisStack(Stack):
             memory_size=1024,
             role=lambda_role_bedrock,
             timeout=Duration.seconds(120),
-            #layers=[matplotlib_layer],
-            code=_lambda.Code.from_asset("src/functions/process_document")
+            code=_lambda.Code.from_asset("src/functions/process_document_month")
+        )
+
+        process_document_daily = _lambda.Function(
+            self, "process_document_daily",
+            function_name= f'{self.stack_name}-process-document-daily',
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="handler.process_document_daily",
+            retry_attempts=1,
+            environment={
+                "BUCKET_NAME": bucket_input_report_daily.bucket_name,
+                "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
+                "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
+                "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
+                "TABLE_TRANSACCION": table_transaction.table_name,
+                "TABLE_MEMORY_LAYER": table_layer_memory.table_name
+            },
+            memory_size=1024,
+            role=lambda_role_bedrock,
+            timeout=Duration.seconds(120),
+            code=_lambda.Code.from_asset("src/functions/process_document_daily")
         )
 
         notification_summary = _lambda.Function(
@@ -182,7 +227,8 @@ class AgentDocumentAnalysisStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler="handler.notify_summary",
             environment={
-                "BUCKET_NAME": bucket_result_analysis.bucket_name,
+                "BUCKET_NAME_MONTH": bucket_result_analysis_month.bucket_name,
+                "BUCKET_NAME_DAILY": bucket_input_report_daily.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
                 "TABLE_TRANSACCION": table_transaction.table_name
@@ -194,16 +240,24 @@ class AgentDocumentAnalysisStack(Stack):
         )
 
         rule_message.add_target(targets.LambdaFunction(notification_summary))
-        sns_topic.grant_publish(process_document)
-        table_transaction.grant_write_data(process_document)
-        table_layer_memory.grant_write_data(process_document)
+        sns_topic.grant_publish(process_document_month)
+        sns_topic.grant_publish(process_document_daily)
+        table_transaction.grant_write_data(process_document_month)
+        table_transaction.grant_write_data(process_document_daily)
+        table_layer_memory.grant_write_data(process_document_month)
+        table_layer_memory.grant_write_data(process_document_daily)
 
         # Add S3 event notification (trigger) to invoke Lambda on object creation
-        bucket_documents.add_event_notification(
+        bucket_input_report_month.add_event_notification(
             s3.EventType.OBJECT_CREATED,  # Trigger on new object uploads
-            s3_notifications.LambdaDestination(process_document)
+            s3_notifications.LambdaDestination(process_document_month)
+        )
+        bucket_input_report_daily.add_event_notification(
+            s3.EventType.OBJECT_CREATED,  # Trigger on new object uploads
+            s3_notifications.LambdaDestination(process_document_daily)
         )
 
         # Grant S3 bucket read permissions to Lambda
-        bucket_documents.grant_read(process_document)
+        bucket_input_report_month.grant_read(process_document_month)
+        bucket_input_report_daily.grant_read(process_document_daily)
         
