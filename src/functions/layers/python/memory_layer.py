@@ -6,30 +6,7 @@ from datetime import datetime
 import uuid
 
 dynamodb = boto3.resource('dynamodb')
-
-
-TABLE_TRANSACCION = os.environ['TABLE_TRANSACCION']
 TABLE_MEMORY_LAYER = os.environ['TABLE_MEMORY_LAYER']
-
-def put_transaccion(transactionId, response_model,report_type):
-    print(f"model response {response_model}")
-    item = {
-        "transactionId": transactionId,
-        "report_type": report_type,
-        "createdAt": datetime.utcnow().isoformat(),
-        "response_model": json.dumps(response_model)
-    }
-     
-    try:
-        table_transaction = dynamodb.Table(TABLE_TRANSACCION)
-        response = table_transaction.put_item(Item=item)
-
-        print(f"table transaccion respponse: ${response}")
-        return response
-        
-    except Exception as ex:
-        print(f"ex ${ex}")
-
 
 def put_memory(response_model,report_type):
     print(f"put memory {response_model}")
@@ -53,7 +30,6 @@ def put_memory(response_model,report_type):
         
     except Exception as ex:
         print(f"ex ${ex}")
-
 
 def get_memory(services, date_month, type_memory):
     try:
@@ -80,3 +56,5 @@ def get_memory(services, date_month, type_memory):
     except Exception as ex:
         print(f"❌ Error querying memory: {ex}")
         return None
+
+

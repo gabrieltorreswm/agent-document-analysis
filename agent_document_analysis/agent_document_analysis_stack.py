@@ -18,6 +18,14 @@ class AgentDocumentAnalysisStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         
+        # Define the Lambda Layer
+        layers = _lambda.LayerVersion(
+            self, "layer",
+            code=_lambda.Code.from_asset("src/functions/layers"),
+            compatible_runtimes=[_lambda.Runtime.PYTHON_3_9],  # or whatever version you're using
+            description="A shared utilities layer",
+        )
+
         #crate topic
         topic_chart_creator = sns.Topic(self, "chart-creator", topic_name=f"{self.stack_name}-chart-creator")
         
@@ -188,7 +196,7 @@ class AgentDocumentAnalysisStack(Stack):
             handler="handler.process_document_month",
             retry_attempts=1,
             environment={
-                "BUCKET_NAME": bucket_input_report_month.bucket_name,
+                "BUCKET_NAME": bucket_result_analysis_month.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
@@ -197,6 +205,7 @@ class AgentDocumentAnalysisStack(Stack):
             },
             memory_size=1024,
             role=lambda_role_bedrock,
+            layers=[layers],
             timeout=Duration.seconds(120),
             code=_lambda.Code.from_asset("src/functions/process_document_month")
         )
@@ -208,7 +217,7 @@ class AgentDocumentAnalysisStack(Stack):
             handler="handler.process_document_daily",
             retry_attempts=1,
             environment={
-                "BUCKET_NAME": bucket_input_report_daily.bucket_name,
+                "BUCKET_NAME": bucket_result_analysis_daily.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "MODEL_ID":"anthropic.claude-3-5-sonnet-20240620-v1:0",
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
@@ -217,6 +226,7 @@ class AgentDocumentAnalysisStack(Stack):
             },
             memory_size=1024,
             role=lambda_role_bedrock,
+            layers=[layers],
             timeout=Duration.seconds(120),
             code=_lambda.Code.from_asset("src/functions/process_document_daily")
         )
@@ -228,7 +238,7 @@ class AgentDocumentAnalysisStack(Stack):
             handler="handler.notify_summary",
             environment={
                 "BUCKET_NAME_MONTH": bucket_result_analysis_month.bucket_name,
-                "BUCKET_NAME_DAILY": bucket_input_report_daily.bucket_name,
+                "BUCKET_NAME_DAILY": bucket_result_analysis_daily.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
                 "TABLE_TRANSACCION": table_transaction.table_name

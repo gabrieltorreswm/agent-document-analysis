@@ -1,13 +1,15 @@
+import os
 import json
 import boto3
-import io
-import csv
 import os
 import uuid
 from promps import generate_prompt
-from servicesData import put_transaccion,put_memory,get_memory
 from datetime import datetime
 from urllib.parse import unquote
+from utils import convert_csv
+from memory_layer import get_memory,put_memory
+from transactions import put_transaction
+
 
 sns_client = boto3.client('sns')
 
@@ -51,7 +53,7 @@ def process_document_month(event, context):
             print(f"reponse text {json.dumps(response['content'][0]['text'],indent=4)}")
 
             response_model = json.loads(response['content'][0]['text']) 
-            put_transaction_response = put_transaccion(transactionId, response_model,"month")
+            put_transaction_response = put_transaction(transactionId, response_model,"month")
             put_memory_response = put_memory(response_model,"month")
             sent_topic_notification = sendMessageTopic(transactionId,"month")
 
@@ -67,13 +69,6 @@ def process_document_month(event, context):
         print(f"Error general {ex}")
         raise Exception(f"The model not return the output expected") 
 
-def convert_csv(csv_file):
-    csv_content = ""
-    csv_reader = csv.reader(io.StringIO(csv_file))
-    csv_content = [row for row in csv_reader]
-
-    print(f' return convert csv : {csv_content}')
-    return csv_content
 
 def sendMessageTopic(payload, report_type):
     # Publish to SNS topic
