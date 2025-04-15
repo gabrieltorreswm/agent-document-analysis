@@ -45,7 +45,9 @@ def process_document_month(event, context):
             prompt = generate_prompt()
             csv_content = convert_csv(image_data.decode('utf-8'))
             current_month = datetime.utcnow().strftime("%Y-%m")
-            get_memory_response = get_memory("cognito",current_month,"month")
+            get_memory_response = get_memory("cognito",query_date = current_month, report_type = "month")
+
+            print(f"get_memory_response {get_memory_response}")
 
             response = invoke_claude_3_multimodal(prompt, csv_content)
 

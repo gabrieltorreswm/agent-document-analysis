@@ -41,9 +41,11 @@ def process_document_daily(event, context):
         # get the prompt 
         prompt = generate_prompt()
         csv_content = convert_csv(image_data.decode('utf-8'))
-        #current_month = datetime.utcnow().strftime("%Y-%m")
-        #get_memory_response = get_memory("cognito",current_month,"daily")
+        current_month = datetime.utcnow().strftime("%Y-%m")
+        get_memory_response = get_memory("cognito",query_date = current_month, report_type = "daily")
 
+        print(f"get_memory_response {get_memory_response}")
+        
         response = invoke_claude_3_multimodal(prompt, csv_content)
 
         print(f'response model raw: {response}')
@@ -51,7 +53,7 @@ def process_document_daily(event, context):
 
         response_model = json.loads(response['content'][0]['text']) 
         put_transaction_response = put_transaction(transactionId, response_model,"daily")
-        #put_memory_response = put_memory(response_model,"month")
+        put_memory_response = put_memory(response_model,"daily")
         sent_topic_notification = sendMessageTopic(transactionId,"daily")
 
         # Parse the JSON response

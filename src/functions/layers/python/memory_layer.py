@@ -15,8 +15,8 @@ def put_memory(response_model,report_type):
     uuid_report = str(uuid.uuid4())
     print(current_month)  # → "2025-03"
     item = {
-        "PK": f"memory#services#cognito" ,
-        "SK": f"{current_month}#{report_type}#{uuid_report}" ,
+        "PK": f"memory#report#cognito#{report_type}" ,
+        "SK": f"{current_month}#{uuid_report}" ,
         "context": json.dumps(response_model),
         "createdAt": datetime.utcnow().isoformat(),
     }
@@ -31,15 +31,15 @@ def put_memory(response_model,report_type):
     except Exception as ex:
         print(f"ex ${ex}")
 
-def get_memory(services, date_month, type_memory):
+def get_memory(services, query_date, report_type):
     try:
-        print(f"🔍 Query memory for service: {services}, date_month {date_month} type_memory {type_memory}")
+        print(f"🔍 Query memory for service: {services}, date_month {report_type}")
 
         table = dynamodb.Table(TABLE_MEMORY_LAYER)
 
         response = table.query(
-            KeyConditionExpression=Key("PK").eq(f"memory#services#{services}") & 
-                                   Key("SK").begins_with(f"{date_month}#{type_memory}"),
+            KeyConditionExpression=Key("PK").eq(f"memory#report#{services}#{report_type}") & 
+                                   Key("SK").begins_with(f"{query_date}#"),
             Limit=1,  # Optional: only get the first one
             ScanIndexForward=False  # Get latest first
         )
