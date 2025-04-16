@@ -8,6 +8,7 @@ from datetime import datetime
 from urllib.parse import unquote
 from utils import convert_csv
 from memory_layer import get_memory,put_memory
+from prompt import get_prompt_month
 from transactions import put_transaction
 
 
@@ -40,9 +41,11 @@ def process_document_month(event, context):
                 return { 'statusCode': 403 , 'message': "file format is not valid"}
             
             image_data = s3.get_object(Bucket=bucket_name, Key= object_key__search)['Body'].read()
-        
-            # get the prompt 
-            prompt = generate_prompt()
+ 
+            prompt = get_prompt_month()['prompt_text']
+
+            print(f"prompt {prompt}")
+
             csv_content = convert_csv(image_data.decode('utf-8'))
             current_month = datetime.utcnow().strftime("%Y-%m")
             get_memory_response = get_memory("cognito",query_date = current_month, report_type = "month")
