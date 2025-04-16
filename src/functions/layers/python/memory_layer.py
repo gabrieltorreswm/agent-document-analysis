@@ -1,4 +1,4 @@
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 import json
 import boto3
 import os
@@ -40,6 +40,7 @@ def get_memory(services, query_date, report_type):
         response = table.query(
             KeyConditionExpression=Key("PK").eq(f"memory#report#{services}#{report_type}") & 
                                    Key("SK").begins_with(f"{query_date}#"),
+            #FilterExpression=Attr("createdAt").gte("2025-04-01T00:00:00Z"),
             Limit=1,  # Optional: only get the first one
             ScanIndexForward=False  # Get latest first
         )
