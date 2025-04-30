@@ -7,6 +7,7 @@ s3 = boto3.client('s3')
 dynamodb = boto3.resource("dynamodb")
 from get_body_message_daily import get_body_message_daily
 from get_body_message_month import get_body_message_month
+from configuration import get_configuretion
 
 TABLE_TRANSACCION = os.environ['TABLE_TRANSACCION']
 
@@ -28,7 +29,12 @@ def notify_summary(event, context):
         mode_data_response = get_model_reponse_by_id(transactionId)
 
         # Send the email
-        sendMessageEmail(mode_data_response,url_signed,report_type)
+        configuration = get_configuretion()
+
+        if configuration.get("production"):
+            sendMessageEmail(mode_data_response,url_signed,report_type)
+        if configuration.get("development"):
+            sendMessageEmail(mode_data_response,url_signed,report_type)
 
         return { "statusCode":200 }
     except Exception as ex:

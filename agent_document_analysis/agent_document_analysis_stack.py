@@ -129,6 +129,11 @@ class AgentDocumentAnalysisStack(Stack):
             topic_name=f"{self.stack_name}-notify-email"
         )
 
+        sns_topic_pro = sns.Topic(self, "FinOpsTopicPro",
+            display_name="AWS FinOps Cost Alerts GT",
+            topic_name=f"{self.stack_name}-notify-email-pro"
+        )
+
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
             actions=["sns:Publish"],
             resources=[sns_topic.topic_arn, topic_chart_creator.topic_arn]
@@ -241,10 +246,12 @@ class AgentDocumentAnalysisStack(Stack):
                 "BUCKET_NAME_DAILY": bucket_result_analysis_daily.bucket_name,
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
-                "TABLE_TRANSACCION": table_transaction.table_name
+                "TABLE_TRANSACCION": table_transaction.table_name,
+                "TABLE_MEMORY_LAYER": table_layer_memory.table_name
             },
             memory_size=1024,
             role=lambda_role_bedrock,
+            layers=[layers],
             timeout=Duration.seconds(90),
             code=_lambda.Code.from_asset("src/functions/notify_summary")
         )
