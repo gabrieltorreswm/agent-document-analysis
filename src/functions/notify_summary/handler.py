@@ -65,7 +65,7 @@ def sendMessageEmail(data,url_signed,report_type):
                 }
             }
         )
-
+        print(f'fendMessageEmail : {response}')
         return response
     except Exception as ex:
         print(f"Error: {ex}")
@@ -78,7 +78,7 @@ def get_url_s3(transactionId,bucket_name):
         url = s3.generate_presigned_url(
             ClientMethod='get_object',
             Params={'Bucket': bucket_name, 'Key': object_key},
-            ExpiresIn=1440  # 1 hour
+            ExpiresIn=51840  # 1 hour
         )
 
         return url

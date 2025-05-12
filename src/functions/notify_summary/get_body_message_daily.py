@@ -75,6 +75,13 @@ def get_body_message_daily(data_response_model,url_signed):
                 <h3>💡 Analisis/Conclusion</h3>
                 <pre>{conclusion}</pre>
 
+                <h3>📝 Nota: </h3>
+                <div style="background-color: #f9f9f9; border-left: 4px solid #ccc; padding: 10px; font-style: italic; font-size: 14px; color: #555;">
+                    Los pronósticos presentados en el reporte diario deben interpretarse con mayor cautela,<br>
+                    ya que el modelo se basa en datos históricos, los cuales pueden resultar limitados<br>
+                    para generar estimaciones precisas a nivel diario.
+                </div>
+
                 <p style="margin-top: 30px;">
                 Saludos,<br/>
                 <strong>Servicios Cloud</strong>
