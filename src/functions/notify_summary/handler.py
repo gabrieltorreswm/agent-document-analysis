@@ -54,9 +54,9 @@ def sendMessageEmail(data,url_signed,report_type):
 
     try:
         response = ses_client.send_email(
-            Source="gtorresp@bolivariano.com",  # Must be a verified email in SES
+            Source="gabrieltorreswm@gmail.com",  # Must be a verified email in SES
             Destination={
-                "ToAddresses": ["gtorresp@bolivariano.com"]  # Can also be a list
+                "ToAddresses": ["gabrieltorreswm@gmail.com"]  # Can also be a list
             },
             Message={
                 "Subject": {"Data": f"🚀 AWS FinOps Rerporte de Costos {'Diario' if report_type == 'daily' else 'Mensual'}"},
