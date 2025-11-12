@@ -46,6 +46,14 @@ class AgentDocumentAnalysisStack(Stack):
                 "detail_type": ["summary_notify"]
             }
         )
+        
+        event_mcp_notify = events.Rule(self, "mcp-notify",
+            rule_name=f"{self.stack_name}-mcp-notify",
+            event_pattern={
+                "source": ["agent.mcp.observability"],
+                "detail_type": ["notify.summary.v1"]
+            }
+        )
 
         table_layer_memory = dynamodb.Table(
             self, f"{self.stack_name}-memory",
@@ -116,7 +124,7 @@ class AgentDocumentAnalysisStack(Stack):
 
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
             actions=["dynamodb:GetItem"],
-            resources=[table_transaction.table_arn]
+            resources=[table_transaction.table_arn, "arn:aws:dynamodb:us-east-1:471112847654:table/agentic-mpc-data-store"]
         ))
 
         lambda_role_bedrock.add_to_policy(iam.PolicyStatement(
@@ -255,8 +263,27 @@ class AgentDocumentAnalysisStack(Stack):
             timeout=Duration.seconds(90),
             code=_lambda.Code.from_asset("src/functions/notify_summary")
         )
+        
+        agent_notification_summary = _lambda.Function(
+            self, "notification_summary_mcp",
+            function_name= f'{self.stack_name}-notify-summary-mcp',
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="handler.notify_summary_mcp",
+            environment={
+                "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
+                "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
+                "TABLE_TRANSACCION": table_transaction.table_name,
+                "TABLE_MEMORY_LAYER": table_layer_memory.table_name
+            },
+            memory_size=1024,
+            role=lambda_role_bedrock,
+            layers=[layers],
+            timeout=Duration.seconds(90),
+            code=_lambda.Code.from_asset("src/functions/notify_summary_mcp")
+        )
 
         rule_message.add_target(targets.LambdaFunction(notification_summary))
+        event_mcp_notify.add_target(targets.LambdaFunction(agent_notification_summary))
         sns_topic.grant_publish(process_document_month)
         sns_topic.grant_publish(process_document_daily)
         table_transaction.grant_write_data(process_document_month)
