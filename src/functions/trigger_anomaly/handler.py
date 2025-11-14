@@ -12,20 +12,24 @@ def trigger_anomaly(event, context):
     }
 
     try:
-        response = http.request(
-            "POST",
-            url,
-            body=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            timeout=30
-        )
+        # response = http.request(
+        #     "POST",
+        #     url,
+        #     body=json.dumps(payload).encode("utf-8"),
+        #     headers={"Content-Type": "application/json"},
+        #     timeout=30
+        # )
 
-        print(f"Response status: {response.status}")
-        print(f"Response body: {response.data.decode('utf-8')}")
+        # print(f"Response status: {response.status}")
+        # print(f"Response body: {response.data.decode('utf-8')}")
 
+        #return {
+        #    "statusCode": response.status,
+        #    "body": response.data.decode("utf-8")
+        #}
         return {
-            "statusCode": response.status,
-            "body": response.data.decode("utf-8")
+            "statusCode": 200,
+            "body": "disable"
         }
 
     except Exception as ex:
