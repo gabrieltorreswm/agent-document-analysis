@@ -4,8 +4,9 @@ import os
 
 ses_client = boto3.client("ses") 
 
-from get_body_message import template
+#from body_message_mcp import get_template
 from mc_dynamodb import dynamodb_getItem
+
 
 def notify_summary_mcp(event, context):
     # Get the data from the event
@@ -27,26 +28,52 @@ def notify_summary_mcp(event, context):
 
 
 
-def sendMessageEmail(item_data):
-    additional_attributes = json.loads(item_data.get("additional_attributes"))
-    data_analisis = item_data.get("data")
+def sendMessageEmail(item_data: dict):
+    #additional_attributes = json.loads(item_data.get("additional_attributes"))
+    print(f"sendmessageemail  {item_data}")
     
-    html_body = get_body_message(data_analisis)
+    raw_data = item_data.get("data")
+    raw_additional = item_data.get("additional_attributes")
 
+
+    print(f" raw_data {raw_data} and additional {raw_additional}")
     try:
+        
+        additional = {}
+        if raw_additional:
+            additional = json.loads(raw_additional)
+
+        print(f"data additional {additional}")
+        # Construye el HTML (puedes personalizarlo)
+
+        html_body = f"""
+            <h2>🚀 Análisis de Observabilidad 🤖</h2>
+            <p><strong>Resumen:</strong> {raw_data}</p>
+            <hr>
+            <h3>Detalles adicionales</h3>
+            <p>🤖 <strong>Razonamiento:</strong> {additional.get('reasoning', 'N/A')}</p>
+            <p>📊 <strong>Impacto:</strong> {additional.get('impact', 'N/A')}</p>
+            <p>🧾 <strong>Evidencia:</strong></p>
+            {additional.get('evidence', 'N/A')}
+            <p>⏱️ <strong>Latency:</strong> {additional.get('latency', 'N/A')}</p>
+            <p>🔍 <strong>Causa raíz:</strong> {additional.get('root_cause', 'N/A')}</p>
+            <p>📝 <strong>Análisis:</strong> {additional.get('analysis_summary', 'N/A')}</p>
+        """
+
+
         response = ses_client.send_email(
-            Source="gabrieltorreswm@gmail.com",  # Must be a verified email in SES
+            Source="gtorresp@bolivariano.com",  # Must be a verified email in SES
             Destination={
                 "ToAddresses": ["gtorresp@bolivariano.com"]  # Can also be a list
             },
             Message={
-                "Subject": {"Data": f"🚀 Analisis de Observabilidad"},
+                "Subject": {"Data": f"🚀 Análisis de Observabilidad "},
                 "Body": {
                     "Html": {"Data": html_body }
                 }
             }
         )
-        print(f'fendMessageEmail : {response}')
+        print(f'fendMessageEmail : { response }')
         return response
     except Exception as ex:
         print(f"Error: {ex}")

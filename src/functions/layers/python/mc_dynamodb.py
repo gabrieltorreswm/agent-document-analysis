@@ -9,7 +9,7 @@ from typing import Dict, Any, List
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table("arn:aws:dynamodb:us-east-1:471112847654:table/agentic-mpc-data-store")
 
-def dynamodb_getItem(item_id:str)-> Dict[str, Any]:
+def dynamodb_getItem(item_id:str):
     try:
         print(f"🔍 querying {table}")
 
@@ -23,10 +23,7 @@ def dynamodb_getItem(item_id:str)-> Dict[str, Any]:
         
         item = response["Item"]
         print(f"response item {item}")
-        return {
-            "success": True,
-            "item": item
-        }
+        return item
 
     except Exception as ex:
         print(f"❌ Error querying mmcp  memory layer{ex}")

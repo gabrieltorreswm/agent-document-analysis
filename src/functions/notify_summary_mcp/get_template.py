@@ -1,4 +1,4 @@
-def get_body_message(data_analisis):
+def body_message_mcp(data_analisis):
 
     try:
          # Custom email subject & message body

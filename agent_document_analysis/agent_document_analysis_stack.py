@@ -281,6 +281,24 @@ class AgentDocumentAnalysisStack(Stack):
             timeout=Duration.seconds(90),
             code=_lambda.Code.from_asset("src/functions/notify_summary_mcp")
         )
+        
+        trigger_anomaly_detection = _lambda.Function(
+            self, "agent_trigger_anomaly_detection",
+            function_name= f'{self.stack_name}-trigger_anomaly',
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="handler.trigger_anomaly",
+            environment={
+                "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
+                "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
+                "TABLE_TRANSACCION": table_transaction.table_name,
+                "TABLE_MEMORY_LAYER": table_layer_memory.table_name
+            },
+            memory_size=1024,
+            role=lambda_role_bedrock,
+            layers=[layers],
+            timeout=Duration.seconds(90),
+            code=_lambda.Code.from_asset("src/functions/trigger_anomaly")
+        )
 
         rule_message.add_target(targets.LambdaFunction(notification_summary))
         event_mcp_notify.add_target(targets.LambdaFunction(agent_notification_summary))

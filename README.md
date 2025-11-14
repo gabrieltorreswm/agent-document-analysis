@@ -56,3 +56,24 @@ command.
  * `cdk docs`        open CDK documentation
 
 Enjoy!
+
+
+
+Event anomaly detection event reciever
+
+
+Event received: {'Records': 
+[{'EventSource': 'aws:sns', 
+'EventVersion': '1.0', 
+'EventSubscriptionArn': 
+'arn:aws:sns:us-east-1:471112847654:grafana-topic-notify:2ddfe8f6-d7d2-4ff3-9983-e4ca910b20ee', 
+'Sns': {'Type': 
+'Notification', 'MessageId': 'c7e448a3-6781-54dd-a14a-29321e5b444c',
+'TopicArn': 'arn:aws:sns:us-east-1:471112847654:grafana-topic-notify',
+'Message': '{"AlarmName":"# Error Api  |  Verificarseg  |  Inicio de Sesión",
+"AlarmDescription":"Se ha generado una alarma en el endpoint de inicio de sesión del API de Banca Móvil, debido a la detección de un patrón de comportamiento anómalo que podría indicar un incidente o actividad no habitual.",
+"AWSAccountId":"471112847654",
+"AlarmConfigurationUpdatedTimestamp":"2025-11-14T17:27:42.228+0000",
+"NewStateValue":"ALARM",
+"NewStateReason":"Thresholds Crossed: 1 out of the last 4 datapoints [537.0 (14/11/25 18:39:00)] was less than the lower thresholds [193.33593366980995] or greater than the upper thresholds [531.4406901351432] (minimum 1 datapoint for OK -> ALARM transition).","StateChangeTime":"2025-11-14T18:40:26.838+0000","Region":"US East (N. Virginia)","AlarmArn":"arn:aws:cloudwatch:us-east-1:471112847654:alarm:# Error Api  |  Verificarseg  |  Inicio de Sesión","OldStateValue":"OK","OKActions":[],"AlarmActions":["arn:aws:sns:us-east-1:471112847654:grafana-topic-notify"],"InsufficientDataActions":[],"Trigger":{"Period":60,"EvaluationPeriods":4,"DatapointsToAlarm":1,"ComparisonOperator":"LessThanLowerOrGreaterThanUpperThreshold","ThresholdMetricId":"ad1","TreatMissingData":"missing","EvaluateLowSampleCountPercentile":"","Metrics":[{"Id":"m1","MetricStat":{"Metric":{"Dimensions":[{"value":"bmp-msp-verificarseg-pro","name":"ApiName"},{"value":"/iniciarsesion","name":"Resource"},{"value":"pro","name":"Stage"},{"value":"POST","name":"Method"}],"MetricName":"Count","Namespace":"AWS/ApiGateway"},"Period":60,"Stat":"Sum"},"ReturnData":true,"AccountId":"775096123702"},{"Expression":"ANOMALY_DETECTION_BAND(m1, 1.5)","Id":"ad1","Label":"Count (expected)","ReturnData":true}]}}', 'Timestamp': '2025-11-14T18:40:26.892Z', 'SignatureVersion': '1', 'Signature': 'jwsJmO5tHpVzzgqzuvkonrsKSLxwg79HutxDBNS5famzsbzS8gMiq1kb1SZHM1aV1IUPDkW5nuh2HASp+09i4Wes6xGuoP9TNUdGUFWrl83rQuCfg3kEpnx8urPiVxAqVn0FSxZD+8RKBhPN6UlDXDd5TXTr5xmXiR0L85Fpe6HjW0TfpGz4ziDido206x5a3yXTzmb6HwvskTLwfFYoR/dCSGkmiU9RdVIDGucwsbo6jeGj38waWHUWVzJsYBLDL8O1270nz5Ot6+yKQzvraihm+1SbRyXuyuL+2GFKxt/dPobuD5H187G3TWKCToxu5Z8Fd5MeqguF4gpx+k9+1g==', 'SigningCertUrl': 'https://sns.us-east-1.amazonaws.com/SimpleNotificationService-6209c161c6221fdf56ec1eb5c821d112.pem', 'Subject': 'ALARM: "# Error Api  |  Verificarseg  |  Inicio de Sesi_n" in US East (N. Virginia)', 'UnsubscribeUrl': 'https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:471112847654:grafana-topic-notify:2ddfe8f6-d7d2-4ff3-9983-e4ca910b20ee', 'MessageAttributes': {}}}]}
+
