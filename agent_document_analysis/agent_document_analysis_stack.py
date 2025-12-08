@@ -54,6 +54,24 @@ class AgentDocumentAnalysisStack(Stack):
                 "detail_type": ["notify.summary.v1"]
             }
         )
+        
+        event_mcp_generate_analysis = events.Rule(self, "mcp-generate-analysis",
+            rule_name=f"{self.stack_name}-mcp-generate-analysis",
+            event_pattern={
+                "source": ["agent.mcp.analysis"],
+                "detail_type": ["generate.analysis.v1"]
+            }
+        )
+        
+        
+        scheduled_mcp_generate_analysis = events.Rule(self, "mcp-generate-analysis-schedule",
+            rule_name=f"{self.stack_name}-mcp-generate-analysis-schedule",
+            schedule=events.Schedule.cron(
+                minute="0",
+                hour="13,15,17,20,22",  # 12:00, 15:00, 17:00 local -> 17:00, 20:00, 22:00 UTC
+            )
+        )
+
 
         table_layer_memory = dynamodb.Table(
             self, f"{self.stack_name}-memory",
@@ -300,11 +318,11 @@ class AgentDocumentAnalysisStack(Stack):
             code=_lambda.Code.from_asset("src/functions/trigger_anomaly")
         )
 
-        trigger_generate_analisis = _lambda.Function(
-            self, "trigger_generate_analisis",
-            function_name= f'{self.stack_name}-trigger_generate_analisis',
+        trigger_generate_analysis = _lambda.Function(
+            self, "trigger_generate_analysis",
+            function_name= f'{self.stack_name}-trigger_generate_analysis',
             runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="handler.trigger_generate_analisis",
+            handler="handler.trigger_generate_analysis",
             environment={
                 "SNS_TOPIC_EMAIL": sns_topic.topic_arn,
                 "SNS_TOPIC_CHART_CREATOR":topic_chart_creator.topic_arn,
@@ -314,12 +332,14 @@ class AgentDocumentAnalysisStack(Stack):
             memory_size=1024,
             role=lambda_role_bedrock,
             layers=[layers],
-            timeout=Duration.seconds(90),
-            code=_lambda.Code.from_asset("src/functions/trigger_generate_analisis")
+            timeout=Duration.seconds(140),
+            code=_lambda.Code.from_asset("src/functions/trigger_generate_analysis")
         )
 
         rule_message.add_target(targets.LambdaFunction(notification_summary))
         event_mcp_notify.add_target(targets.LambdaFunction(agent_notification_summary))
+        event_mcp_generate_analysis.add_target(targets.LambdaFunction(trigger_generate_analysis))
+        scheduled_mcp_generate_analysis.add_target(targets.LambdaFunction(trigger_generate_analysis))
         sns_topic.grant_publish(process_document_month)
         sns_topic.grant_publish(process_document_daily)
         table_transaction.grant_write_data(process_document_month)
