@@ -64,7 +64,7 @@ def sendMessageEmail(item_data: dict):
         response = ses_client.send_email(
             Source="gtorresp@bolivariano.com",  # Must be a verified email in SES
             Destination={
-                "ToAddresses": ["gtorresp@bolivariano.com"]  # Can also be a list
+                "ToAddresses": ["gtorresp@bolivariano.com"]  # Can also be a list // "jgaiborv@bolivariano.com","mbehrl@bolivariano.com"
             },
             Message={
                 "Subject": {"Data": f"🚀 Análisis de Observabilidad "},
