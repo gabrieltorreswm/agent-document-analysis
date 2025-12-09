@@ -6,7 +6,7 @@ http = urllib3.PoolManager()
 def trigger_generate_analysis(event, context):
     print(f"Event received: {event}")
 
-    url = "http://agentic-mpc-alb-688972174.us-east-1.elb.amazonaws.com/analyze-observability"
+    url = "http://agentic-mpc-alb-688972174.us-east-1.elb.amazonaws.com/v1/event/analyze-observability"
     payload = {
         "prompt": "analyze, make sure fecth all metrics define in the steps, save in dynamodb and send the event."
     }
