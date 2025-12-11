@@ -66,7 +66,7 @@ def sendMessageEmail(item_data: dict):
             Destination={
                 "ToAddresses": [
                     "gtorresp@bolivariano.com",
-                    "jgaiborv@bolivariano.com","mbehrl@bolivariano.com","izanga@bolivariano.com"
+                    #"jgaiborv@bolivariano.com","mbehrl@bolivariano.com","izanga@bolivariano.com"
                     ]  # Can also be a list // "jgaiborv@bolivariano.com","mbehrl@bolivariano.com","izanga@bolivariano.com"
             },
             Message={
