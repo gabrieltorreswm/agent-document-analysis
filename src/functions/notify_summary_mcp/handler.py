@@ -64,7 +64,26 @@ def sendMessageEmail(item_data: dict):
         response = ses_client.send_email(
             Source="gtorresp@bolivariano.com",  # Must be a verified email in SES
             Destination={
-                "ToAddresses": ["gtorresp@bolivariano.com","jgaiborv@bolivariano.com","mbehrl@bolivariano.com","izanga@bolivariano.com"]  # Can also be a list // "jgaiborv@bolivariano.com","mbehrl@bolivariano.com","izanga@bolivariano.com"
+                "ToAddresses": [
+                    "gtorresp@bolivariano.com",
+                    "jgaiborv@bolivariano.com",
+                    "mbehrl@bolivariano.com",
+                    "izanga@bolivariano.com",
+                    "oyepez@bolivariano.com",
+                    "rramirec@bolivariano.com",
+                    "wbarzola@bolivariano.com",
+                    "mrosario@bolivariano.com",
+                    "cjuezc@bolivariano.com",
+                    "calvarec@bolivariano.com",
+                    "gsaetamf@bolivariano.com",
+                    "gsornoza@bolivariano.com",
+                    "aromerov@bolivariano.com",
+                    "azamora@bolivariano.com",
+                    "acabrera@bolivariano.com",
+                    "pamador@bolivariano.com",
+                    "cbustamm@bolivariano.com",
+                    "mmespinoza@bolivariano.com"
+                    ]  # Can also be a list // "jgaiborv@bolivariano.com","mbehrl@bolivariano.com","izanga@bolivariano.com"
             },
             Message={
                 "Subject": {"Data": f"🚀 Análisis de Observabilidad "},
